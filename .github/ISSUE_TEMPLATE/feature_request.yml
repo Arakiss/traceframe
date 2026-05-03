@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose a Traceframe capability or integration.
+title: "feat: "
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What agent-harness workflow is hard to inspect today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should Traceframe add or change?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer
+      options:
+        - Event schema
+        - CLI ergonomics
+        - Rust library API
+        - Ledger / catalog
+        - Report / export
+        - Gommage integration
+        - Codex / OMX integration
+        - Documentation
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Contract checks
+      options:
+        - label: This keeps trace files as the source of truth.
+        - label: This does not turn Traceframe into an agent runtime or sandbox.
+        - label: If this needs a database, the database is a rebuildable derived index.

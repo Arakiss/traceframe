@@ -16,6 +16,8 @@ include = [
     "tests/**",
     "examples/**",
     "docs/**",
+    "scripts/**",
+    "skills/**",
     "assets/banner.svg",
     "Cargo.toml",
     "Cargo.lock",

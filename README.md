@@ -241,6 +241,13 @@ for discovery, filtering, and handoff, but it is intentionally rebuildable from
 See [`docs/storage.md`](docs/storage.md) for the storage decision record and
 tradeoffs.
 
+## Agent Skill
+
+This repo ships an agent-facing skill at
+[`skills/traceframe`](skills/traceframe). Install or copy it into Codex/Claude
+skill directories when agents should know the correct Traceframe operating
+contract, commands, and release gate.
+
 ## Product boundaries
 
 Traceframe deliberately starts with one contract: capture a local, ordered,

@@ -15,6 +15,8 @@ while the public harness contract is still being proven.
 - Open-trace inspection for interrupted runs.
 - Rebuildable local ledger with `traceframe ledger rebuild/list/show`.
 - Rust `TraceRecorder` API for harnesses that want to write traces directly.
+- Agent-facing `skills/traceframe` operating instructions.
+- Release-readiness script, GitHub templates, and CODEOWNERS.
 - CI coverage floor at 80% line coverage.
 
 ### Fixed

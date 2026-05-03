@@ -38,6 +38,9 @@ jobs:
       - name: Coverage threshold
         run: cargo llvm-cov --workspace --all-targets --fail-under-lines 80
 
+      - name: Release readiness
+        run: sh scripts/check-release-readiness.sh
+
       - name: Smoke sample trace
         run: |
           cargo run -- verify --file examples/agent-run.traceframe
