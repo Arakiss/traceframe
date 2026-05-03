@@ -155,17 +155,12 @@ a rebuildable catalog of runs, not a second source of truth.
 See [`docs/storage.md`](docs/storage.md) for the storage decision record and
 tradeoffs.
 
-## Non-goals
+## Product boundaries
 
-Traceframe is not:
-
-- a SaaS product;
-- a dashboard-first observability platform;
-- an agent runtime;
-- a replacement for OpenTelemetry;
-- a replacement for `gommage`, sandboxing, or native agent permissions;
-- an eval framework in v0.1;
-- a prompt management tool.
+Traceframe deliberately starts with one contract: capture a local, ordered,
+inspectable record of an agent run. Runtime control, permission policy,
+dashboards, OpenTelemetry export, eval suites, and prompt management can connect
+around that trace contract, but they should not define v0.1.
 
 ## Versioning and changelog
 
