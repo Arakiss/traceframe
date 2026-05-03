@@ -1,12 +1,12 @@
-mod render;
-mod trace;
-
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 use serde_json::Value;
-use trace::{EventKind, Trace};
+use traceframe::{
+    render,
+    trace::{EventKind, Trace},
+};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about)]

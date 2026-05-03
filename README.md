@@ -15,14 +15,14 @@
 
 > _Agents do not need more autonomy before they have inspectable traces._
 
-**A local-first trace recorder and inspector for AI agent workflows.**
+**A local-first Rust library and CLI for AI agent workflow traces.**
 
 > **Development status: local MVP.** Traceframe is public, installable from source, and verified by CI, but the trace schema and CLI are still intentionally narrow. Expect breaking schema/CLI changes while the project is tested against real agent workflows. Use it first for local harness inspection, examples, and failure analysis.
 
 Traceframe records what an AI agent actually did: model calls, tool calls,
 permission decisions, errors, final state, and the order in which those things
-happened. It is a small Rust CLI and append-only JSONL trace format designed
-for local harness engineering, not a SaaS dashboard.
+happened. It is a small Rust crate, CLI, and append-only JSONL trace format
+designed for local harness engineering, not a SaaS dashboard.
 
 ## Where it fits
 
@@ -164,4 +164,3 @@ to prove that the local trace contract is useful inside real agent workflows.
 - A failed run should become a test, policy, eval, or workflow improvement.
 - Local JSONL comes before SaaS.
 - Export surfaces come after the core trace contract is useful.
-
