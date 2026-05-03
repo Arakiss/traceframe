@@ -114,6 +114,20 @@ use, `run`, `exec`, and `finish` avoid hand-writing the common `tool.call`,
 `tool.result`, and `run.finished` payloads. `summary`, `inspect`, and `render`
 also work on open traces so interrupted agent runs can still be reviewed.
 
+Once runs accumulate under `.traceframe/runs/`, rebuild the local ledger. Omit
+`--file` when you want `run` to use the default local run directory:
+
+```bash
+traceframe run --run-id run-demo -- cargo test
+traceframe ledger rebuild
+traceframe ledger list
+traceframe ledger list --status failed
+traceframe ledger show --run-id run-demo
+```
+
+The ledger is a derived catalog, not a database and not a second source of
+truth. If it is stale or deleted, rebuild it from the trace files.
+
 ## Example output
 
 ```text
@@ -169,6 +183,8 @@ Traceframe's CLI is designed for both humans and agents:
 - command traces include argv, exit code, duration, byte counts, and bounded
   stdout/stderr previews;
 - open traces can still be summarized, inspected, and rendered;
+- `ledger rebuild/list/show` gives agents a stable catalog once many local runs
+  exist;
 - the raw trace file remains the source of truth when an agent needs to inspect
   or pass the run evidence to another step.
 
@@ -195,8 +211,9 @@ is simple to append, inspect, diff, and recover from. A database may be added
 later as a derived local index, but not as the primary record of what the agent
 did.
 
-A run ledger will likely be useful once there are many traces, but it should be
-a rebuildable catalog of runs, not a second source of truth.
+The run ledger is the first derived storage layer. It catalogs local trace files
+for discovery, filtering, and handoff, but it is intentionally rebuildable from
+`.traceframe/runs/*.traceframe`.
 
 See [`docs/storage.md`](docs/storage.md) for the storage decision record and
 tradeoffs.

@@ -16,6 +16,7 @@ Recommended local layout:
 .traceframe/
   runs/
     run-2026-05-03T09-00-00Z.traceframe
+  ledger.traceframe
   reports/
     run-2026-05-03T09-00-00Z.html
 ```
@@ -107,13 +108,13 @@ Possible future layout:
 Possible future commands:
 
 ```bash
-traceframe index rebuild --dir .traceframe/runs --db .traceframe/index/traceframe.sqlite
+traceframe index rebuild --dir .traceframe/runs --ledger .traceframe/ledger.traceframe --db .traceframe/index/traceframe.sqlite
 traceframe index query --status failed --tool shell
 ```
 
 ## Do we need a ledger?
 
-Yes, but not as the first source of truth.
+Yes, and Traceframe now includes it as a derived local catalog.
 
 A ledger is useful when there are many traces and agents need a fast catalog of
 runs without opening every trace file. It should answer:
@@ -139,17 +140,17 @@ ledger.traceframe must be rebuildable from runs/*.traceframe
 This avoids having two competing truths. If the ledger is corrupt or deleted,
 Traceframe can rebuild it. If a trace is deleted, the evidence is gone.
 
-Possible future commands:
+Current commands:
 
 ```bash
 traceframe ledger rebuild --dir .traceframe/runs --out .traceframe/ledger.traceframe
-traceframe ledger list --status failed
-traceframe ledger show run-agent-demo
+traceframe ledger list --file .traceframe/ledger.traceframe --status failed
+traceframe ledger show --file .traceframe/ledger.traceframe --run-id run-agent-demo
 ```
 
-The ledger should come before SQLite if the next bottleneck is discoverability
-for agents. SQLite should come after the ledger if the bottleneck becomes query
-speed, joins, dashboards, or aggregate analysis.
+The ledger comes before SQLite because the current bottleneck is
+discoverability for agents. SQLite should come after the ledger if the
+bottleneck becomes query speed, joins, dashboards, or aggregate analysis.
 
 ## Tradeoffs
 
@@ -225,5 +226,5 @@ Write trace files. Verify trace files. Render from trace files. Derive indexes
 and exports from trace files.
 ```
 
-Do not add a database until real trace usage proves that search/indexing is the
-actual bottleneck.
+Use the ledger for local run discovery. Do not add a database until real trace
+usage proves that search/indexing is the actual bottleneck.

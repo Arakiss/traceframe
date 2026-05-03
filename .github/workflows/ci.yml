@@ -47,6 +47,10 @@ jobs:
 
       - name: Dogfood command tracing
         run: |
-          cargo run -- run --file /tmp/traceframe-ci.traceframe --run-id ci-dogfood --force -- cargo --version
-          cargo run -- verify --file /tmp/traceframe-ci.traceframe
-          cargo run -- summary --file /tmp/traceframe-ci.traceframe
+          mkdir -p /tmp/traceframe-runs
+          cargo run -- run --file /tmp/traceframe-runs/ci-dogfood.traceframe --run-id ci-dogfood --force -- cargo --version
+          cargo run -- ledger rebuild --dir /tmp/traceframe-runs --out /tmp/traceframe-ledger.traceframe
+          cargo run -- ledger list --file /tmp/traceframe-ledger.traceframe
+          cargo run -- ledger show --file /tmp/traceframe-ledger.traceframe --run-id ci-dogfood
+          cargo run -- verify --file /tmp/traceframe-runs/ci-dogfood.traceframe
+          cargo run -- summary --file /tmp/traceframe-runs/ci-dogfood.traceframe

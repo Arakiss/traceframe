@@ -10,7 +10,7 @@ use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
 use time::{OffsetDateTime, macros::format_description};
 use traceframe::{
-    render,
+    ledger, render,
     trace::{EventKind, Trace},
 };
 
@@ -93,6 +93,36 @@ enum Command {
         file: PathBuf,
         #[arg(long)]
         html: PathBuf,
+    },
+    /// Rebuild and inspect the local run ledger.
+    Ledger {
+        #[command(subcommand)]
+        command: LedgerCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum LedgerCommand {
+    /// Rebuild a ledger from trace files.
+    Rebuild {
+        #[arg(long, default_value = ".traceframe/runs")]
+        dir: PathBuf,
+        #[arg(long, default_value = ".traceframe/ledger.traceframe")]
+        out: PathBuf,
+    },
+    /// List runs from a ledger.
+    List {
+        #[arg(long, default_value = ".traceframe/ledger.traceframe")]
+        file: PathBuf,
+        #[arg(long)]
+        status: Option<String>,
+    },
+    /// Show one run from a ledger.
+    Show {
+        #[arg(long, default_value = ".traceframe/ledger.traceframe")]
+        file: PathBuf,
+        #[arg(long)]
+        run_id: String,
     },
 }
 
@@ -224,6 +254,30 @@ fn main() -> Result<()> {
                 ],
             );
         }
+        Command::Ledger { command } => match command {
+            LedgerCommand::Rebuild { dir, out } => {
+                let entries = ledger::rebuild(&dir, &out)?;
+                print_action(
+                    "ledger rebuild",
+                    &[
+                        ("dir", dir.display().to_string()),
+                        ("out", out.display().to_string()),
+                        ("entries", entries.len().to_string()),
+                    ],
+                );
+            }
+            LedgerCommand::List { file, status } => {
+                let entries = ledger::read(&file)?;
+                let entries = ledger::filter_by_status(&entries, status.as_deref());
+                print!("{}", ledger::render_list(&entries));
+            }
+            LedgerCommand::Show { file, run_id } => {
+                let entries = ledger::read(&file)?;
+                let entry = ledger::find_by_run_id(&entries, &run_id)
+                    .with_context(|| format!("run not found in ledger: {run_id}"))?;
+                print!("{}", ledger::render_entry(entry));
+            }
+        },
     }
 
     Ok(())
