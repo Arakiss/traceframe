@@ -44,6 +44,9 @@ jobs:
       - name: Host smoke
         run: sh scripts/host-smoke.sh
 
+      - name: Codex/OMX hook smoke
+        run: sh scripts/codex-omx-hook-smoke.sh
+
       - name: Smoke sample trace
         run: |
           cargo run -- verify --file examples/agent-run.traceframe

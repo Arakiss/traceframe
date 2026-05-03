@@ -19,13 +19,16 @@ LICENSE
 README.md
 SECURITY.md
 docs/harness-integration.md
+docs/codex-omx-hooks.md
 docs/publishing.md
 docs/storage.md
 examples/agent-run.traceframe
 examples/harness-recorder.rs
+scripts/codex-omx-hook-smoke.sh
 scripts/check-release-readiness.sh
 scripts/host-smoke.sh
 skills/traceframe/SKILL.md
+src/hook.rs
 src/trace.rs
 src/ledger.rs
 '

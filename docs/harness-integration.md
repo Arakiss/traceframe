@@ -34,6 +34,20 @@ fn run_harness() -> anyhow::Result<()> {
 }
 ```
 
+Use hook ingestion when the harness already emits JSON lifecycle hooks:
+
+```bash
+traceframe hook ingest \
+  --source codex \
+  --run-id "$TRACEFRAME_RUN_ID" \
+  --init-if-missing \
+  --file "$TRACEFRAME_FILE"
+```
+
+The hook payload is read from stdin and mapped to `tool.call`, `tool.result`,
+`permission.decision`, or `error`. See
+[`codex-omx-hooks.md`](codex-omx-hooks.md).
+
 ## Boundary
 
 `TraceRecorder` is not an agent runtime. It does not approve, deny, sandbox, or

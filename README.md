@@ -128,6 +128,22 @@ traceframe ledger show --run-id run-demo
 The ledger is a derived catalog, not a database and not a second source of
 truth. If it is stale or deleted, rebuild it from the trace files.
 
+For host hooks, ingest the JSON payload from stdin instead of wrapping each
+command manually:
+
+```bash
+traceframe hook ingest \
+  --source codex \
+  --run-id codex-run-demo \
+  --init-if-missing \
+  --file .traceframe/runs/codex-run-demo.traceframe <<'JSON'
+{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"cargo test"}}
+JSON
+```
+
+See [`docs/codex-omx-hooks.md`](docs/codex-omx-hooks.md) for the Codex/OMX
+hook pattern and the current installation boundary.
+
 ## Example output
 
 ```text
@@ -203,6 +219,8 @@ Traceframe's CLI is designed for both humans and agents:
 - `run` creates, records, and closes a command trace in one step;
 - wrapped command stdout/stderr is preserved;
 - `exec` returns the wrapped command's exit code;
+- `hook ingest` lets Codex/OMX-style hosts append tool, result, permission, and
+  error events from stdin;
 - command traces include argv, exit code, duration, byte counts, and bounded
   stdout/stderr previews;
 - open traces can still be summarized, inspected, and rendered;
@@ -222,6 +240,7 @@ cargo test
 cargo llvm-cov --workspace --all-targets --fail-under-lines 80
 sh scripts/check-release-readiness.sh
 sh scripts/host-smoke.sh
+sh scripts/codex-omx-hook-smoke.sh
 ```
 
 The 80% line-coverage threshold is intentionally modest for v0.1, but it is a
@@ -231,6 +250,8 @@ it is treated as part of the tool.
 `scripts/host-smoke.sh` is the deeper dogfood path. It creates real success,
 failed, manual, and open traces in a temporary workspace, renders HTML, rebuilds
 the ledger, filters by status, and verifies the Rust harness example.
+`scripts/codex-omx-hook-smoke.sh` separately simulates the host-hook path used
+by Codex/OMX-style agent workflows.
 
 ## Storage model
 

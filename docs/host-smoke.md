@@ -26,3 +26,7 @@ TRACEFRAME_BIN=target/debug/traceframe sh scripts/host-smoke.sh
 
 CI runs this script after the release-readiness gate so regressions are caught
 before a public commit is treated as ready.
+
+`scripts/codex-omx-hook-smoke.sh` is a separate host-hook smoke. It simulates
+Codex/OMX-style JSON hooks and proves `hook ingest`, `finish`, `verify`,
+`summary`, `inspect`, `render`, and `ledger` on the generated trace.

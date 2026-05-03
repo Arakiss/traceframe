@@ -12,6 +12,8 @@ while the public harness contract is still being proven.
 - Local append-only trace files for AI agent workflow events.
 - CLI commands for `init`, `record`, `finish`, `exec`, `run`, `verify`,
   `summary`, `inspect`, and `render`.
+- Hook ingestion with `traceframe hook ingest` for Codex/OMX-style host
+  payloads.
 - Open-trace inspection for interrupted runs.
 - Rebuildable local ledger with `traceframe ledger rebuild/list/show`.
 - Rust `TraceRecorder` API for harnesses that want to write traces directly.
@@ -19,6 +21,8 @@ while the public harness contract is still being proven.
 - Release-readiness script, GitHub templates, and CODEOWNERS.
 - Host smoke script that dogfoods success, failure, manual, open, render,
   ledger, and Rust-recorder flows.
+- Codex/OMX hook smoke script that dogfoods host payload ingestion, rendering,
+  and ledger indexing.
 - CI coverage floor at 80% line coverage.
 
 ### Fixed

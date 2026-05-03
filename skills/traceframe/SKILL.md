@@ -30,6 +30,16 @@ traceframe ledger list
 traceframe ledger list --status failed
 ```
 
+For host hook payloads, pipe one JSON hook payload into `hook ingest`:
+
+```bash
+traceframe hook ingest \
+  --source codex \
+  --run-id "$TRACEFRAME_RUN_ID" \
+  --init-if-missing \
+  --file "$TRACEFRAME_FILE"
+```
+
 ## Rust Harness API
 
 Use `TraceRecorder` when the harness is already Rust:
@@ -60,6 +70,8 @@ cargo clippy -- -D warnings
 cargo test
 cargo llvm-cov --workspace --all-targets --fail-under-lines 80
 sh scripts/check-release-readiness.sh
+sh scripts/host-smoke.sh
+sh scripts/codex-omx-hook-smoke.sh
 ```
 
 Prefer small public commits per verified block:
