@@ -172,6 +172,21 @@ Traceframe's CLI is designed for both humans and agents:
 - the raw trace file remains the source of truth when an agent needs to inspect
   or pass the run evidence to another step.
 
+## Quality gate
+
+Every public change should pass the same gate that CI runs:
+
+```bash
+cargo fmt --check
+cargo clippy -- -D warnings
+cargo test
+cargo llvm-cov --workspace --all-targets --fail-under-lines 80
+```
+
+The 80% line-coverage threshold is intentionally modest for v0.1, but it is a
+floor, not a target. New command behavior should come with focused tests before
+it is treated as part of the tool.
+
 ## Storage model
 
 Traceframe stores traces as local append-only files. The trace file is the
