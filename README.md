@@ -138,6 +138,15 @@ Supported event kinds:
 - `error`
 - `run.finished`
 
+## Storage model
+
+Traceframe stores traces as local append-only JSONL files. The trace file is
+the source of truth. A database may be added later as a derived local index, but
+not as the primary record of what the agent did.
+
+See [`docs/storage.md`](docs/storage.md) for the storage decision record and
+tradeoffs.
+
 ## Non-goals
 
 Traceframe is not:
