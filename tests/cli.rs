@@ -545,6 +545,145 @@ fn run_closes_trace_when_command_cannot_spawn() {
 }
 
 #[test]
+fn hook_ingest_can_initialize_missing_trace_and_record_codex_tool_events() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("hook.traceframe");
+
+    traceframe()
+        .args([
+            "hook",
+            "ingest",
+            "--source",
+            "codex",
+            "--run-id",
+            "hook-run",
+            "--init-if-missing",
+            "--file",
+        ])
+        .arg(&trace_path)
+        .write_stdin(
+            r#"{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"cargo test"},"session_id":"codex-session"}"#,
+        )
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("traceframe hook ingest"))
+        .stdout(predicate::str::contains("tool.call#1"));
+
+    traceframe()
+        .args(["hook", "ingest", "--source", "codex", "--file"])
+        .arg(&trace_path)
+        .write_stdin(
+            r#"{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_response":{"success":true,"exit_code":0,"stdout":"ok"}}"#,
+        )
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("tool.result#2"));
+
+    traceframe()
+        .args(["summary", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("run_id: hook-run"))
+        .stdout(predicate::str::contains("tool_calls: 1"))
+        .stdout(predicate::str::contains("tool_results: 1"));
+
+    traceframe()
+        .args(["finish", "--file"])
+        .arg(&trace_path)
+        .args(["--status", "success"])
+        .assert()
+        .success();
+
+    traceframe()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success();
+
+    let trace = fs::read_to_string(trace_path).unwrap();
+    assert!(trace.contains(r#""source":"codex""#));
+    assert!(trace.contains(r#""hook_event":"PreToolUse""#));
+    assert!(trace.contains(r#""session_id":"codex-session""#));
+}
+
+#[test]
+fn hook_ingest_records_permission_and_error_events() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("hook.traceframe");
+
+    traceframe()
+        .args(["init", "--file"])
+        .arg(&trace_path)
+        .args(["--run-id", "hook-run"])
+        .assert()
+        .success();
+
+    traceframe()
+        .args(["hook", "ingest", "--source", "omx", "--file"])
+        .arg(&trace_path)
+        .write_stdin(
+            r#"{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"command":"edit README.md"},"decision":"allow"}"#,
+        )
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("permission.decision#1"));
+
+    traceframe()
+        .args(["hook", "ingest", "--source", "generic", "--file"])
+        .arg(&trace_path)
+        .write_stdin(
+            r#"{"hook_event_name":"HookError","tool_name":"Bash","error":{"message":"hook failed"}}"#,
+        )
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("error#2"));
+
+    traceframe()
+        .args(["inspect", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("permission.decision"))
+        .stdout(predicate::str::contains("error"));
+}
+
+#[test]
+fn hook_ingest_rejects_missing_trace_without_init_flag() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("missing.traceframe");
+
+    traceframe()
+        .args(["hook", "ingest", "--file"])
+        .arg(&trace_path)
+        .write_stdin(r#"{"hook_event_name":"PreToolUse","tool_name":"Bash"}"#)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("trace does not exist"));
+}
+
+#[test]
+fn hook_ingest_rejects_empty_stdin() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("hook.traceframe");
+
+    traceframe()
+        .args(["init", "--file"])
+        .arg(&trace_path)
+        .args(["--run-id", "hook-run"])
+        .assert()
+        .success();
+
+    traceframe()
+        .args(["hook", "ingest", "--file"])
+        .arg(&trace_path)
+        .write_stdin("")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("missing hook JSON on stdin"));
+}
+
+#[test]
 fn ledger_rebuild_lists_filters_and_shows_runs() {
     let dir = tempdir().unwrap();
     let runs_dir = dir.path().join("runs");

@@ -1,5 +1,5 @@
 use std::{
-    io::{self, Write},
+    io::{self, Read, Write},
     path::{Path, PathBuf},
     process::{self, Command as ProcessCommand},
     time::Instant,
@@ -10,6 +10,7 @@ use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
 use time::{OffsetDateTime, macros::format_description};
 use traceframe::{
+    hook::{HookSource, map_hook_payload},
     ledger, render,
     trace::{EventKind, Trace},
 };
@@ -94,10 +95,30 @@ enum Command {
         #[arg(long)]
         html: PathBuf,
     },
+    /// Ingest host hook payloads from agent harnesses.
+    Hook {
+        #[command(subcommand)]
+        command: HookCommand,
+    },
     /// Rebuild and inspect the local run ledger.
     Ledger {
         #[command(subcommand)]
         command: LedgerCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum HookCommand {
+    /// Read one hook JSON payload from stdin and append mapped events.
+    Ingest {
+        #[arg(long)]
+        file: PathBuf,
+        #[arg(long, default_value = "codex")]
+        source: String,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long, default_value_t = false)]
+        init_if_missing: bool,
     },
 }
 
@@ -254,6 +275,16 @@ fn main() -> Result<()> {
                 ],
             );
         }
+        Command::Hook { command } => match command {
+            HookCommand::Ingest {
+                file,
+                source,
+                run_id,
+                init_if_missing,
+            } => {
+                ingest_hook(&file, &source, run_id.as_deref(), init_if_missing)?;
+            }
+        },
         Command::Ledger { command } => match command {
             LedgerCommand::Rebuild { dir, out } => {
                 let entries = ledger::rebuild(&dir, &out)?;
@@ -299,6 +330,54 @@ fn finish_trace(file: &Path, status: &str, summary: Option<&str>) -> Result<()> 
             ("file", file.display().to_string()),
             ("status", status.to_string()),
             ("seq", event.seq.to_string()),
+        ],
+    );
+    Ok(())
+}
+
+fn ingest_hook(
+    file: &Path,
+    source: &str,
+    run_id: Option<&str>,
+    init_if_missing: bool,
+) -> Result<()> {
+    if !file.exists() {
+        if !init_if_missing {
+            bail!(
+                "trace does not exist: {}; pass --init-if-missing --run-id <id> to create it",
+                file.display()
+            );
+        }
+        let run_id = run_id.context("--run-id is required with --init-if-missing")?;
+        Trace::init(file, run_id, false)?;
+    }
+
+    let source = source.parse::<HookSource>()?;
+    let mut input = String::new();
+    io::stdin()
+        .read_to_string(&mut input)
+        .context("failed to read hook payload from stdin")?;
+    if input.trim().is_empty() {
+        bail!("missing hook JSON on stdin");
+    }
+
+    let payload = parse_payload(&input)?;
+    let events = map_hook_payload(source, &payload)?;
+    let mut recorded = Vec::with_capacity(events.len());
+    for event in events {
+        if matches!(event.kind, EventKind::RunStarted | EventKind::RunFinished) {
+            bail!("hook ingest cannot create lifecycle events directly");
+        }
+        let event = Trace::append(file, event.kind, event.payload)?;
+        recorded.push(format!("{}#{}", event.kind, event.seq));
+    }
+
+    print_action(
+        "hook ingest",
+        &[
+            ("file", file.display().to_string()),
+            ("source", source.to_string()),
+            ("events", recorded.join(", ")),
         ],
     );
     Ok(())
