@@ -684,6 +684,29 @@ fn hook_ingest_rejects_empty_stdin() {
 }
 
 #[test]
+fn hook_ingest_does_not_initialize_trace_for_invalid_payload() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("invalid.traceframe");
+
+    traceframe()
+        .args([
+            "hook",
+            "ingest",
+            "--run-id",
+            "invalid-run",
+            "--init-if-missing",
+            "--file",
+        ])
+        .arg(&trace_path)
+        .write_stdin("{not-json")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid JSON payload"));
+
+    assert!(!trace_path.exists());
+}
+
+#[test]
 fn ledger_rebuild_lists_filters_and_shows_runs() {
     let dir = tempdir().unwrap();
     let runs_dir = dir.path().join("runs");

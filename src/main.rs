@@ -341,17 +341,6 @@ fn ingest_hook(
     run_id: Option<&str>,
     init_if_missing: bool,
 ) -> Result<()> {
-    if !file.exists() {
-        if !init_if_missing {
-            bail!(
-                "trace does not exist: {}; pass --init-if-missing --run-id <id> to create it",
-                file.display()
-            );
-        }
-        let run_id = run_id.context("--run-id is required with --init-if-missing")?;
-        Trace::init(file, run_id, false)?;
-    }
-
     let source = source.parse::<HookSource>()?;
     let mut input = String::new();
     io::stdin()
@@ -363,6 +352,18 @@ fn ingest_hook(
 
     let payload = parse_payload(&input)?;
     let events = map_hook_payload(source, &payload)?;
+
+    if !file.exists() {
+        if !init_if_missing {
+            bail!(
+                "trace does not exist: {}; pass --init-if-missing --run-id <id> to create it",
+                file.display()
+            );
+        }
+        let run_id = run_id.context("--run-id is required with --init-if-missing")?;
+        Trace::init(file, run_id, false)?;
+    }
+
     let mut recorded = Vec::with_capacity(events.len());
     for event in events {
         if matches!(event.kind, EventKind::RunStarted | EventKind::RunFinished) {
