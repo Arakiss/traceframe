@@ -146,6 +146,29 @@ See [`examples/agent-run.traceframe`](examples/agent-run.traceframe)
 for a sample run with an allowed permission, a denied permission, a failed tool
 result, and a final failed state.
 
+## Library API
+
+Rust harnesses can write traces directly with `TraceRecorder`:
+
+```rust
+use traceframe::trace::TraceRecorder;
+
+let recorder = TraceRecorder::start(
+    ".traceframe/runs/my-agent-run.traceframe",
+    "my-agent-run",
+    true,
+)?;
+
+recorder.model_call("openai", "gpt-5.5")?;
+recorder.permission_decision("fs.write:README.md", "allow")?;
+recorder.tool_call("shell", "cargo test", ["cargo", "test"])?;
+recorder.tool_result("shell", "cargo test", true, Some(0), Some(320))?;
+recorder.finish("success", Some("harness completed"))?;
+```
+
+See [`docs/harness-integration.md`](docs/harness-integration.md) and
+[`examples/harness-recorder.rs`](examples/harness-recorder.rs).
+
 ## Event model
 
 v0.1 supports one run per trace file. The public contract is the event model;

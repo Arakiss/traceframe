@@ -2,7 +2,7 @@ use std::{
     fmt,
     fs::{self, OpenOptions},
     io::Write,
-    path::Path,
+    path::{Path, PathBuf},
     str::FromStr,
 };
 
@@ -97,6 +97,114 @@ impl Event {
 #[derive(Debug, Clone)]
 pub struct Trace {
     pub events: Vec<Event>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TraceRecorder {
+    path: PathBuf,
+}
+
+impl TraceRecorder {
+    pub fn start(path: impl AsRef<Path>, run_id: &str, force: bool) -> Result<Self> {
+        let path = path.as_ref().to_path_buf();
+        Trace::init(&path, run_id, force)?;
+        Ok(Self { path })
+    }
+
+    pub fn open(path: impl AsRef<Path>) -> Self {
+        Self {
+            path: path.as_ref().to_path_buf(),
+        }
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn record(&self, kind: EventKind, payload: Value) -> Result<Event> {
+        Trace::append(&self.path, kind, payload)
+    }
+
+    pub fn model_call(&self, provider: &str, model: &str) -> Result<Event> {
+        self.record(
+            EventKind::ModelCall,
+            json!({
+                "provider": provider,
+                "model": model,
+            }),
+        )
+    }
+
+    pub fn permission_decision(&self, capability: &str, decision: &str) -> Result<Event> {
+        self.record(
+            EventKind::PermissionDecision,
+            json!({
+                "capability": capability,
+                "decision": decision,
+            }),
+        )
+    }
+
+    pub fn tool_call<I, S>(&self, tool: &str, command: &str, argv: I) -> Result<Event>
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        let argv = argv.into_iter().map(Into::into).collect::<Vec<_>>();
+        self.record(
+            EventKind::ToolCall,
+            json!({
+                "tool": tool,
+                "command": command,
+                "argv": argv,
+            }),
+        )
+    }
+
+    pub fn tool_result(
+        &self,
+        tool: &str,
+        command: &str,
+        success: bool,
+        exit_code: Option<i32>,
+        duration_ms: Option<u64>,
+    ) -> Result<Event> {
+        self.record(
+            EventKind::ToolResult,
+            json!({
+                "tool": tool,
+                "command": command,
+                "success": success,
+                "exit_code": exit_code,
+                "duration_ms": duration_ms,
+            }),
+        )
+    }
+
+    pub fn error(&self, message: &str) -> Result<Event> {
+        self.record(
+            EventKind::Error,
+            json!({
+                "message": message,
+            }),
+        )
+    }
+
+    pub fn finish(&self, status: &str, summary: Option<&str>) -> Result<Event> {
+        let mut payload = json!({ "status": status });
+        if let Some(summary) = summary {
+            payload["summary"] = Value::String(summary.to_string());
+        }
+        self.record(EventKind::RunFinished, payload)
+    }
+
+    pub fn read(&self) -> Result<Trace> {
+        Trace::read(&self.path)
+    }
+
+    pub fn summary(&self) -> Result<TraceSummary> {
+        Ok(self.read()?.summary())
+    }
 }
 
 impl Trace {
@@ -313,6 +421,7 @@ fn now_ms() -> i128 {
 #[cfg(test)]
 mod tests {
     use serde_json::json;
+    use tempfile::tempdir;
 
     use super::*;
 
@@ -432,5 +541,50 @@ mod tests {
         assert_eq!(summary.status, "success");
         assert_eq!(summary.permission_decisions, 1);
         assert_eq!(summary.event_count, 3);
+    }
+
+    #[test]
+    fn recorder_captures_harness_events() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("run.traceframe");
+
+        let recorder = TraceRecorder::start(&path, "run-recorder", false).unwrap();
+        recorder.model_call("openai", "gpt-5.5").unwrap();
+        recorder
+            .permission_decision("fs.write:README.md", "allow")
+            .unwrap();
+        recorder
+            .tool_call("shell", "cargo test", ["cargo", "test"])
+            .unwrap();
+        recorder
+            .tool_result("shell", "cargo test", true, Some(0), Some(42))
+            .unwrap();
+        recorder.finish("success", Some("recorder test")).unwrap();
+
+        let summary = recorder.summary().unwrap();
+
+        assert_eq!(recorder.path(), path);
+        assert_eq!(summary.run_id, "run-recorder");
+        assert_eq!(summary.status, "success");
+        assert_eq!(summary.model_calls, 1);
+        assert_eq!(summary.permission_decisions, 1);
+        assert_eq!(summary.tool_calls, 1);
+        assert_eq!(summary.tool_results, 1);
+    }
+
+    #[test]
+    fn recorder_can_attach_to_existing_trace() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("attached.traceframe");
+        Trace::init(&path, "run-attached", false).unwrap();
+
+        let recorder = TraceRecorder::open(&path);
+        recorder.error("attached failure").unwrap();
+        recorder.finish("failed", None).unwrap();
+
+        let summary = recorder.summary().unwrap();
+
+        assert_eq!(summary.status, "failed");
+        assert_eq!(summary.errors, 1);
     }
 }
