@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="traceframe - inspectable traces for AI agent workflows" width="100%" />
+  <img src="assets/banner.svg?v=20260503-pipeline" alt="traceframe - inspectable traces for AI agent workflows" width="100%" />
 </p>
 <p align="center"><sub><em>The frame is the harness. The trace is what lets the next agent understand the run.</em></sub></p>
 
