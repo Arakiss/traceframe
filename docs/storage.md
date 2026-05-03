@@ -6,14 +6,16 @@ to attach to issues, and robust when a process crashes halfway through a run.
 
 ## Decision
 
-The source of truth is one append-only JSONL file per run.
+The source of truth is one append-only Traceframe trace file per run. The
+current file encoding is line-delimited JSON because it is simple to append,
+inspect, diff, and recover from.
 
 Recommended local layout:
 
 ```text
 .traceframe/
   runs/
-    run-2026-05-03T09-00-00Z.traceframe.jsonl
+    run-2026-05-03T09-00-00Z.traceframe
   reports/
     run-2026-05-03T09-00-00Z.html
 ```
@@ -22,9 +24,9 @@ The CLI currently accepts an explicit `--file` path. That keeps v0.1 simple and
 lets agents decide where a trace belongs. A later convenience command can choose
 the default `.traceframe/runs/` layout.
 
-## Why JSONL first
+## Why line-delimited JSON first
 
-JSONL matches the first-principles harness requirement:
+Line-delimited JSON matches the first-principles harness requirement:
 
 - **Append-only.** Each event is one line. The writer does not need to rewrite a
   whole document.
@@ -39,9 +41,9 @@ JSONL matches the first-principles harness requirement:
 - **Exportable.** OpenTelemetry, SQLite, Parquet, HTML, or dashboards can be
   generated from it later.
 
-This is the same kind of narrow contract that makes `gommage` useful: a small
-local artifact with explicit semantics is more valuable than a broad platform
-that hides the evidence behind a UI.
+This is an implementation choice, not the product identity. Traceframe's public
+contract is the event model and the local evidence artifact. The encoding can
+gain exports or derived indexes without turning v0.1 into a platform.
 
 ## Why not a database as source of truth in v0.1
 
@@ -85,7 +87,7 @@ Use SQLite when Traceframe needs:
 Important rule:
 
 ```text
-SQLite should be rebuildable from JSONL traces.
+SQLite should be rebuildable from Traceframe trace files.
 ```
 
 That keeps the event log as evidence and the database as acceleration.
@@ -95,8 +97,8 @@ Possible future layout:
 ```text
 .traceframe/
   runs/
-    *.traceframe.jsonl
-  ledger.jsonl
+    *.traceframe
+  ledger.traceframe
   index/
     traceframe.sqlite
 ```
@@ -113,7 +115,7 @@ traceframe index query --status failed --tool shell
 Yes, but not as the first source of truth.
 
 A ledger is useful when there are many traces and agents need a fast catalog of
-runs without opening every JSONL file. It should answer:
+runs without opening every trace file. It should answer:
 
 - which runs exist;
 - where each trace file lives;
@@ -130,7 +132,7 @@ ledger is a catalog.
 Recommended rule:
 
 ```text
-ledger.jsonl must be rebuildable from runs/*.traceframe.jsonl
+ledger.traceframe must be rebuildable from runs/*.traceframe
 ```
 
 This avoids having two competing truths. If the ledger is corrupt or deleted,
@@ -139,7 +141,7 @@ Traceframe can rebuild it. If a trace is deleted, the evidence is gone.
 Possible future commands:
 
 ```bash
-traceframe ledger rebuild --dir .traceframe/runs --out .traceframe/ledger.jsonl
+traceframe ledger rebuild --dir .traceframe/runs --out .traceframe/ledger.traceframe
 traceframe ledger list --status failed
 traceframe ledger show run-agent-demo
 ```
@@ -150,7 +152,7 @@ speed, joins, dashboards, or aggregate analysis.
 
 ## Tradeoffs
 
-### JSONL source of truth
+### Append-only trace file source of truth
 
 Pros:
 
@@ -188,7 +190,7 @@ Cons:
 
 Pros:
 
-- keeps JSONL as evidence;
+- keeps the raw trace file as evidence;
 - adds speed when needed;
 - rebuildable;
 - supports dashboards without sacrificing portability.
@@ -218,7 +220,8 @@ Cons:
 For now:
 
 ```text
-Write JSONL. Verify JSONL. Render from JSONL. Derive everything else from JSONL.
+Write trace files. Verify trace files. Render from trace files. Derive indexes
+and exports from trace files.
 ```
 
 Do not add a database until real trace usage proves that search/indexing is the

@@ -34,7 +34,15 @@ jobs:
 
       - name: Smoke sample trace
         run: |
-          cargo run -- verify --file examples/agent-run.traceframe.jsonl
-          cargo run -- summary --file examples/agent-run.traceframe.jsonl
-          cargo run -- render --file examples/agent-run.traceframe.jsonl --html /tmp/traceframe-agent-run.html
+          cargo run -- verify --file examples/agent-run.traceframe
+          cargo run -- summary --file examples/agent-run.traceframe
+          cargo run -- render --file examples/agent-run.traceframe --html /tmp/traceframe-agent-run.html
           test -s /tmp/traceframe-agent-run.html
+
+      - name: Dogfood command tracing
+        run: |
+          cargo run -- init --file /tmp/traceframe-ci.traceframe --run-id ci-dogfood --force
+          cargo run -- exec --file /tmp/traceframe-ci.traceframe -- cargo --version
+          cargo run -- finish --file /tmp/traceframe-ci.traceframe --status success --summary "CI command tracing smoke"
+          cargo run -- verify --file /tmp/traceframe-ci.traceframe
+          cargo run -- summary --file /tmp/traceframe-ci.traceframe

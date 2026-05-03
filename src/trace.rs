@@ -159,7 +159,7 @@ impl Trace {
                 continue;
             }
             let event = serde_json::from_str::<Event>(trimmed)
-                .with_context(|| format!("invalid JSONL event at line {}", line_index + 1))?;
+                .with_context(|| format!("invalid trace event at line {}", line_index + 1))?;
             events.push(event);
         }
 
