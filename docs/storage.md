@@ -96,6 +96,7 @@ Possible future layout:
 .traceframe/
   runs/
     *.traceframe.jsonl
+  ledger.jsonl
   index/
     traceframe.sqlite
 ```
@@ -106,6 +107,46 @@ Possible future commands:
 traceframe index rebuild --dir .traceframe/runs --db .traceframe/index/traceframe.sqlite
 traceframe index query --status failed --tool shell
 ```
+
+## Do we need a ledger?
+
+Yes, but not as the first source of truth.
+
+A ledger is useful when there are many traces and agents need a fast catalog of
+runs without opening every JSONL file. It should answer:
+
+- which runs exist;
+- where each trace file lives;
+- which agent/harness created the run;
+- when the run started and finished;
+- whether it passed, failed, or was cancelled;
+- how many events/errors/permission decisions it contains;
+- which repository, branch, commit, or task it relates to;
+- whether derived reports or indexes exist.
+
+But the ledger should not replace the trace. The trace is the evidence. The
+ledger is a catalog.
+
+Recommended rule:
+
+```text
+ledger.jsonl must be rebuildable from runs/*.traceframe.jsonl
+```
+
+This avoids having two competing truths. If the ledger is corrupt or deleted,
+Traceframe can rebuild it. If a trace is deleted, the evidence is gone.
+
+Possible future commands:
+
+```bash
+traceframe ledger rebuild --dir .traceframe/runs --out .traceframe/ledger.jsonl
+traceframe ledger list --status failed
+traceframe ledger show run-agent-demo
+```
+
+The ledger should come before SQLite if the next bottleneck is discoverability
+for agents. SQLite should come after the ledger if the bottleneck becomes query
+speed, joins, dashboards, or aggregate analysis.
 
 ## Tradeoffs
 
@@ -182,4 +223,3 @@ Write JSONL. Verify JSONL. Render from JSONL. Derive everything else from JSONL.
 
 Do not add a database until real trace usage proves that search/indexing is the
 actual bottleneck.
-

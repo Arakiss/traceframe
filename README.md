@@ -60,6 +60,11 @@ Agent failures are often hard to review after the fact. A transcript is not a
 trace. A shell log is not a trace. A permission decision alone does not explain
 the full episode around it.
 
+Traceframe comes from private harness engineering work and real daily use of AI
+coding agents. It is not a first pass at the problem. The public version is a
+small extraction of a recurring operational need: agents need to leave evidence
+that another agent or human can inspect after the run.
+
 Traceframe takes a narrow stance:
 
 - **Local-first.** A trace is a file you can inspect, diff, archive, attach to
@@ -143,6 +148,9 @@ Supported event kinds:
 Traceframe stores traces as local append-only JSONL files. The trace file is
 the source of truth. A database may be added later as a derived local index, but
 not as the primary record of what the agent did.
+
+A run ledger will likely be useful once there are many traces, but it should be
+a rebuildable catalog of runs, not a second source of truth.
 
 See [`docs/storage.md`](docs/storage.md) for the storage decision record and
 tradeoffs.
