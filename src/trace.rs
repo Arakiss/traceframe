@@ -167,6 +167,14 @@ impl Trace {
     }
 
     pub fn verify(&self) -> Result<()> {
+        self.verify_integrity(true)
+    }
+
+    pub fn verify_open(&self) -> Result<()> {
+        self.verify_integrity(false)
+    }
+
+    fn verify_integrity(&self, require_finished: bool) -> Result<()> {
         if self.events.is_empty() {
             bail!("trace is empty");
         }
@@ -179,7 +187,7 @@ impl Trace {
         let run_id = &first.run_id;
         let mut previous_seq = None;
 
-        for event in &self.events {
+        for (index, event) in self.events.iter().enumerate() {
             if event.version != TRACEFRAME_VERSION {
                 bail!(
                     "unsupported event version {} at seq {}",
@@ -193,6 +201,9 @@ impl Trace {
             if event.event_id.trim().is_empty() {
                 bail!("empty event_id at seq {}", event.seq);
             }
+            if event.kind == EventKind::RunFinished && index + 1 != self.events.len() {
+                bail!("run.finished must be last");
+            }
             if let Some(previous) = previous_seq
                 && event.seq <= previous
             {
@@ -201,7 +212,7 @@ impl Trace {
             previous_seq = Some(event.seq);
         }
 
-        if self.events.last().map(|e| e.kind) != Some(EventKind::RunFinished) {
+        if require_finished && self.events.last().map(|e| e.kind) != Some(EventKind::RunFinished) {
             bail!("last event must be run.finished");
         }
 
@@ -232,7 +243,7 @@ impl Trace {
             tool_results: 0,
             permission_decisions: 0,
             errors: 0,
-            status: "unknown".to_string(),
+            status: "open".to_string(),
             duration_ms: None,
         };
 

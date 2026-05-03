@@ -41,8 +41,6 @@ jobs:
 
       - name: Dogfood command tracing
         run: |
-          cargo run -- init --file /tmp/traceframe-ci.traceframe --run-id ci-dogfood --force
-          cargo run -- exec --file /tmp/traceframe-ci.traceframe -- cargo --version
-          cargo run -- finish --file /tmp/traceframe-ci.traceframe --status success --summary "CI command tracing smoke"
+          cargo run -- run --file /tmp/traceframe-ci.traceframe --run-id ci-dogfood --force -- cargo --version
           cargo run -- verify --file /tmp/traceframe-ci.traceframe
           cargo run -- summary --file /tmp/traceframe-ci.traceframe

@@ -20,9 +20,10 @@ Recommended local layout:
     run-2026-05-03T09-00-00Z.html
 ```
 
-The CLI currently accepts an explicit `--file` path. That keeps v0.1 simple and
-lets agents decide where a trace belongs. A later convenience command can choose
-the default `.traceframe/runs/` layout.
+Most commands accept an explicit `--file` path. That keeps v0.1 simple and lets
+agents decide where a trace belongs. For one-command dogfooding, `traceframe run`
+can also create a default trace under `.traceframe/runs/` when `--file` is not
+provided.
 
 ## Why line-delimited JSON first
 

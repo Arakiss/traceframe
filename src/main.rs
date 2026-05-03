@@ -8,6 +8,7 @@ use std::{
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
+use time::{OffsetDateTime, macros::format_description};
 use traceframe::{
     render,
     trace::{EventKind, Trace},
@@ -58,10 +59,23 @@ enum Command {
         #[arg(required = true, trailing_var_arg = true, allow_hyphen_values = true)]
         command: Vec<String>,
     },
+    /// Create a trace, run one command, and close the trace automatically.
+    Run {
+        #[arg(long)]
+        file: Option<PathBuf>,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long, default_value_t = false)]
+        force: bool,
+        #[arg(required = true, trailing_var_arg = true, allow_hyphen_values = true)]
+        command: Vec<String>,
+    },
     /// Validate schema and ordering invariants.
     Verify {
         #[arg(long)]
         file: PathBuf,
+        #[arg(long, default_value_t = false)]
+        allow_open: bool,
     },
     /// Print ordered events for terminal inspection.
     Inspect {
@@ -126,27 +140,7 @@ fn main() -> Result<()> {
             status,
             summary,
         } => {
-            let mut payload = json!({ "status": status });
-            if let Some(summary) = summary {
-                payload["summary"] = Value::String(summary);
-            }
-            let event = Trace::append(&file, EventKind::RunFinished, payload)?;
-            print_action(
-                "finish",
-                &[
-                    ("file", file.display().to_string()),
-                    (
-                        "status",
-                        event
-                            .payload
-                            .get("status")
-                            .and_then(Value::as_str)
-                            .unwrap_or("unknown")
-                            .to_string(),
-                    ),
-                    ("seq", event.seq.to_string()),
-                ],
-            );
+            finish_trace(&file, &status, summary.as_deref())?;
         }
         Command::Exec { file, command } => {
             let exit_code = exec_command(&file, &command)?;
@@ -154,30 +148,73 @@ fn main() -> Result<()> {
                 process::exit(exit_code);
             }
         }
-        Command::Verify { file } => {
+        Command::Run {
+            file,
+            run_id,
+            force,
+            command,
+        } => {
+            let run_id = run_id.unwrap_or_else(|| default_run_id(&command));
+            let file = file.unwrap_or_else(|| default_trace_path(&run_id));
+            Trace::init(&file, &run_id, force)?;
+            print_action(
+                "run",
+                &[
+                    ("file", file.display().to_string()),
+                    ("run_id", run_id.clone()),
+                    ("command", command.join(" ")),
+                ],
+            );
+
+            let exit_code = match exec_command(&file, &command) {
+                Ok(exit_code) => exit_code,
+                Err(error) => {
+                    let _ = finish_trace(&file, "failed", Some("command execution failed"));
+                    return Err(error);
+                }
+            };
+
+            let status = if exit_code == 0 { "success" } else { "failed" };
+            finish_trace(&file, status, Some("traceframe run completed"))?;
+            if exit_code != 0 {
+                process::exit(exit_code);
+            }
+        }
+        Command::Verify { file, allow_open } => {
             let trace = Trace::read(&file)?;
-            trace.verify()?;
+            if allow_open {
+                trace.verify_open()?;
+            } else {
+                trace.verify()?;
+            }
             print_action(
                 "verify",
                 &[
                     ("file", file.display().to_string()),
-                    ("result", "valid trace".to_string()),
+                    (
+                        "result",
+                        if allow_open {
+                            "valid open trace".to_string()
+                        } else {
+                            "valid trace".to_string()
+                        },
+                    ),
                 ],
             );
         }
         Command::Inspect { file } => {
             let trace = Trace::read(&file)?;
-            trace.verify()?;
+            trace.verify_open()?;
             print!("{}", trace.inspect());
         }
         Command::Summary { file } => {
             let trace = Trace::read(&file)?;
-            trace.verify()?;
+            trace.verify_open()?;
             print!("{}", trace.summary().render_text());
         }
         Command::Render { file, html } => {
             let trace = Trace::read(&file)?;
-            trace.verify()?;
+            trace.verify_open()?;
             render::write_html(&trace, &html)?;
             print_action(
                 "render",
@@ -194,6 +231,23 @@ fn main() -> Result<()> {
 
 fn parse_payload(payload: &str) -> Result<Value> {
     serde_json::from_str(payload).with_context(|| format!("invalid JSON payload: {payload}"))
+}
+
+fn finish_trace(file: &Path, status: &str, summary: Option<&str>) -> Result<()> {
+    let mut payload = json!({ "status": status });
+    if let Some(summary) = summary {
+        payload["summary"] = Value::String(summary.to_string());
+    }
+    let event = Trace::append(file, EventKind::RunFinished, payload)?;
+    print_action(
+        "finish",
+        &[
+            ("file", file.display().to_string()),
+            ("status", status.to_string()),
+            ("seq", event.seq.to_string()),
+        ],
+    );
+    Ok(())
 }
 
 fn exec_command(file: &Path, command: &[String]) -> Result<i32> {
@@ -314,6 +368,38 @@ fn preview_output(bytes: &[u8]) -> String {
 
 fn elapsed_ms(started: Instant) -> u64 {
     started.elapsed().as_millis().try_into().unwrap_or(u64::MAX)
+}
+
+fn default_trace_path(run_id: &str) -> PathBuf {
+    PathBuf::from(".traceframe")
+        .join("runs")
+        .join(format!("{run_id}.traceframe"))
+}
+
+fn default_run_id(command: &[String]) -> String {
+    let timestamp = OffsetDateTime::now_utc()
+        .format(format_description!(
+            "[year][month][day]T[hour][minute][second]Z"
+        ))
+        .unwrap_or_else(|_| OffsetDateTime::now_utc().unix_timestamp().to_string());
+    let command_slug = command
+        .first()
+        .map(|program| slugify(program))
+        .filter(|slug| !slug.is_empty())
+        .unwrap_or_else(|| "command".to_string());
+    format!("{timestamp}-{command_slug}")
+}
+
+fn slugify(input: &str) -> String {
+    let mut slug = String::new();
+    for ch in input.chars() {
+        if ch.is_ascii_alphanumeric() {
+            slug.push(ch.to_ascii_lowercase());
+        } else if !slug.ends_with('-') {
+            slug.push('-');
+        }
+    }
+    slug.trim_matches('-').to_string()
 }
 
 fn print_action(action: &str, fields: &[(&str, String)]) {

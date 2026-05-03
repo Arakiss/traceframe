@@ -186,6 +186,54 @@ fn verify_rejects_trace_without_finished_event() {
 }
 
 #[test]
+fn open_trace_can_be_summarized_inspected_rendered_and_optionally_verified() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("open.traceframe");
+    let html_path = dir.path().join("open.html");
+
+    traceframe()
+        .args(["init", "--file"])
+        .arg(&trace_path)
+        .args(["--run-id", "run-open"])
+        .assert()
+        .success();
+
+    traceframe()
+        .args(["summary", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("run_id: run-open"))
+        .stdout(predicate::str::contains("status: open"));
+
+    traceframe()
+        .args(["inspect", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("run.started"));
+
+    traceframe()
+        .args(["render", "--file"])
+        .arg(&trace_path)
+        .args(["--html"])
+        .arg(&html_path)
+        .assert()
+        .success();
+
+    traceframe()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .args(["--allow-open"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("valid open trace"));
+
+    let rendered = fs::read_to_string(html_path).unwrap();
+    assert!(rendered.contains("run-open"));
+}
+
+#[test]
 fn finish_closes_trace_without_manual_json_payload() {
     let dir = tempdir().unwrap();
     let trace_path = dir.path().join("sample.traceframe");
@@ -260,4 +308,99 @@ fn exec_records_command_result_and_preserves_child_output() {
     assert!(trace.contains(r#""argv":["cargo","--version"]"#));
     assert!(trace.contains(r#""success":true"#));
     assert!(trace.contains(r#""stdout_preview":"cargo "#));
+}
+
+#[test]
+fn run_creates_executes_and_closes_trace() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("run.traceframe");
+
+    traceframe()
+        .args(["run", "--file"])
+        .arg(&trace_path)
+        .args(["--run-id", "run-demo", "--", "cargo", "--version"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("cargo"))
+        .stdout(predicate::str::contains("traceframe run"))
+        .stdout(predicate::str::contains("traceframe finish"))
+        .stderr(predicate::str::contains("traceframe exec"));
+
+    traceframe()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success();
+
+    let trace = fs::read_to_string(trace_path).unwrap();
+    assert!(trace.contains(r#""kind":"run.started""#));
+    assert!(trace.contains(r#""kind":"tool.call""#));
+    assert!(trace.contains(r#""kind":"tool.result""#));
+    assert!(trace.contains(r#""kind":"run.finished""#));
+    assert!(trace.contains(r#""status":"success""#));
+}
+
+#[test]
+fn run_uses_default_trace_directory_when_file_is_omitted() {
+    let dir = tempdir().unwrap();
+
+    traceframe()
+        .current_dir(dir.path())
+        .args([
+            "run",
+            "--run-id",
+            "default-demo",
+            "--",
+            "cargo",
+            "--version",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            ".traceframe/runs/default-demo.traceframe",
+        ));
+
+    let trace_path = dir
+        .path()
+        .join(".traceframe")
+        .join("runs")
+        .join("default-demo.traceframe");
+    assert!(trace_path.exists());
+
+    traceframe()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success();
+}
+
+#[test]
+fn run_closes_trace_when_command_fails() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("failed-run.traceframe");
+
+    traceframe()
+        .args(["run", "--file"])
+        .arg(&trace_path)
+        .args([
+            "--run-id",
+            "run-failed",
+            "--",
+            "cargo",
+            "--definitely-not-a-real-flag",
+        ])
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("traceframe finish"))
+        .stderr(predicate::str::contains("traceframe exec"));
+
+    traceframe()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success();
+
+    let trace = fs::read_to_string(trace_path).unwrap();
+    assert!(trace.contains(r#""kind":"run.finished""#));
+    assert!(trace.contains(r#""status":"failed""#));
 }

@@ -89,20 +89,30 @@ cargo install --path .
 ## Quick start
 
 ```bash
-traceframe init --file run.traceframe --run-id run-demo
-traceframe record --file run.traceframe --kind model.call --payload '{"provider":"openai","model":"gpt"}'
-traceframe record --file run.traceframe --kind permission.decision --payload '{"capability":"fs.write:README.md","decision":"allow"}'
-traceframe exec --file run.traceframe -- cargo test
-traceframe finish --file run.traceframe --status success
-traceframe verify --file run.traceframe
+traceframe run --file run.traceframe --run-id run-demo -- cargo test
 traceframe summary --file run.traceframe
 traceframe inspect --file run.traceframe
 traceframe render --file run.traceframe --html traceframe.html
 ```
 
+For longer workflows, keep a trace open and append events as the harness runs:
+
+```bash
+traceframe init --file workflow.traceframe --run-id run-demo
+traceframe record --file workflow.traceframe --kind model.call --payload '{"provider":"openai","model":"gpt"}'
+traceframe record --file workflow.traceframe --kind permission.decision --payload '{"capability":"fs.write:README.md","decision":"allow"}'
+traceframe exec --file workflow.traceframe -- cargo test
+traceframe finish --file workflow.traceframe --status success
+traceframe verify --file workflow.traceframe
+traceframe summary --file workflow.traceframe
+traceframe inspect --file workflow.traceframe
+traceframe render --file workflow.traceframe --html traceframe.html
+```
+
 `record` remains available for raw structured events. For day-to-day harness
-use, `exec` and `finish` avoid hand-writing the common `tool.call`,
-`tool.result`, and `run.finished` payloads.
+use, `run`, `exec`, and `finish` avoid hand-writing the common `tool.call`,
+`tool.result`, and `run.finished` payloads. `summary`, `inspect`, and `render`
+also work on open traces so interrupted agent runs can still be reviewed.
 
 ## Example output
 
@@ -153,10 +163,12 @@ Supported event kinds:
 Traceframe's CLI is designed for both humans and agents:
 
 - commands print stable, aligned summaries;
+- `run` creates, records, and closes a command trace in one step;
 - wrapped command stdout/stderr is preserved;
 - `exec` returns the wrapped command's exit code;
 - command traces include argv, exit code, duration, byte counts, and bounded
   stdout/stderr previews;
+- open traces can still be summarized, inspected, and rendered;
 - the raw trace file remains the source of truth when an agent needs to inspect
   or pass the run evidence to another step.
 
