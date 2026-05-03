@@ -220,11 +220,17 @@ cargo fmt --check
 cargo clippy -- -D warnings
 cargo test
 cargo llvm-cov --workspace --all-targets --fail-under-lines 80
+sh scripts/check-release-readiness.sh
+sh scripts/host-smoke.sh
 ```
 
 The 80% line-coverage threshold is intentionally modest for v0.1, but it is a
 floor, not a target. New command behavior should come with focused tests before
 it is treated as part of the tool.
+
+`scripts/host-smoke.sh` is the deeper dogfood path. It creates real success,
+failed, manual, and open traces in a temporary workspace, renders HTML, rebuilds
+the ledger, filters by status, and verifies the Rust harness example.
 
 ## Storage model
 

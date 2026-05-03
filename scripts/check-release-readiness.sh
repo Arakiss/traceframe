@@ -24,6 +24,7 @@ docs/storage.md
 examples/agent-run.traceframe
 examples/harness-recorder.rs
 scripts/check-release-readiness.sh
+scripts/host-smoke.sh
 skills/traceframe/SKILL.md
 src/trace.rs
 src/ledger.rs

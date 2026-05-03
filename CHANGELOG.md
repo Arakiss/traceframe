@@ -17,6 +17,8 @@ while the public harness contract is still being proven.
 - Rust `TraceRecorder` API for harnesses that want to write traces directly.
 - Agent-facing `skills/traceframe` operating instructions.
 - Release-readiness script, GitHub templates, and CODEOWNERS.
+- Host smoke script that dogfoods success, failure, manual, open, render,
+  ledger, and Rust-recorder flows.
 - CI coverage floor at 80% line coverage.
 
 ### Fixed
