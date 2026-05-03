@@ -2,8 +2,31 @@
 name = "traceframe"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.94"
 description = "Local-first trace recorder and inspector for AI agent workflows."
 license = "MIT"
+repository = "https://github.com/Arakiss/traceframe"
+homepage = "https://traceframe.dev"
+readme = "README.md"
+authors = ["Petru Arakiss <petruarakiss@gmail.com>"]
+keywords = ["ai-agents", "trace", "cli", "observability", "harness"]
+categories = ["command-line-utilities", "development-tools::debugging"]
+include = [
+    "src/**",
+    "tests/**",
+    "examples/**",
+    "docs/**",
+    "assets/banner.svg",
+    "Cargo.toml",
+    "Cargo.lock",
+    "README.md",
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "SECURITY.md",
+    "rust-toolchain.toml",
+]
 
 [dependencies]
 anyhow = "1.0.99"
