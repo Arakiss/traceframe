@@ -398,6 +398,32 @@ mod tests {
     }
 
     #[test]
+    fn open_trace_verifies_without_finished_event() {
+        let mut trace = valid_trace();
+        trace.events.pop();
+
+        trace.verify_open().unwrap();
+        assert_eq!(trace.summary().status, "open");
+    }
+
+    #[test]
+    fn trace_rejects_run_finished_before_last_event() {
+        let mut trace = valid_trace();
+        trace.events.push(Event {
+            version: TRACEFRAME_VERSION,
+            run_id: "run-test".into(),
+            event_id: "e3".into(),
+            kind: EventKind::ToolCall,
+            ts_ms: 130,
+            seq: 3,
+            payload: json!({"tool":"shell"}),
+        });
+
+        let error = trace.verify_open().unwrap_err();
+        assert!(error.to_string().contains("run.finished must be last"));
+    }
+
+    #[test]
     fn summary_counts_events() {
         let summary = valid_trace().summary();
         assert_eq!(summary.status, "success");

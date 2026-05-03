@@ -186,6 +186,28 @@ fn verify_rejects_trace_without_finished_event() {
 }
 
 #[test]
+fn verify_allow_open_rejects_finished_event_before_end() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("bad-order.traceframe");
+    fs::write(
+        &trace_path,
+        r#"{"version":1,"run_id":"run-bad","event_id":"e0","kind":"run.started","ts_ms":1,"seq":0,"payload":{}}
+{"version":1,"run_id":"run-bad","event_id":"e1","kind":"run.finished","ts_ms":2,"seq":1,"payload":{"status":"success"}}
+{"version":1,"run_id":"run-bad","event_id":"e2","kind":"tool.call","ts_ms":3,"seq":2,"payload":{"tool":"shell"}}
+"#,
+    )
+    .unwrap();
+
+    traceframe()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .args(["--allow-open"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("run.finished must be last"));
+}
+
+#[test]
 fn open_trace_can_be_summarized_inspected_rendered_and_optionally_verified() {
     let dir = tempdir().unwrap();
     let trace_path = dir.path().join("open.traceframe");
@@ -401,6 +423,38 @@ fn run_closes_trace_when_command_fails() {
         .success();
 
     let trace = fs::read_to_string(trace_path).unwrap();
+    assert!(trace.contains(r#""kind":"run.finished""#));
+    assert!(trace.contains(r#""status":"failed""#));
+}
+
+#[test]
+fn run_closes_trace_when_command_cannot_spawn() {
+    let dir = tempdir().unwrap();
+    let trace_path = dir.path().join("spawn-failed.traceframe");
+
+    traceframe()
+        .args(["run", "--file"])
+        .arg(&trace_path)
+        .args([
+            "--run-id",
+            "run-spawn-failed",
+            "--",
+            "traceframe-test-command-that-should-not-exist",
+        ])
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("traceframe finish"))
+        .stderr(predicate::str::contains("failed to execute command"));
+
+    traceframe()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success();
+
+    let trace = fs::read_to_string(trace_path).unwrap();
+    assert!(trace.contains(r#""kind":"tool.result""#));
+    assert!(trace.contains(r#""kind":"error""#));
     assert!(trace.contains(r#""kind":"run.finished""#));
     assert!(trace.contains(r#""status":"failed""#));
 }
