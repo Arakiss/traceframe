@@ -46,21 +46,32 @@ jobs:
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Trigger binary build
-        if: ${{ steps.release.outputs['.--release_created'] == 'true' }}
+        # Use the aggregate output for the condition (always present, regardless
+        # of how release-please prefixes per-package outputs), then resolve the
+        # tag from the per-package output with a gh fallback so a config change
+        # can never silently skip the binary build.
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ steps.release.outputs['.--tag_name'] }}
+          TAG_FROM_OUTPUT: ${{ steps.release.outputs['traceframe--tag_name'] }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "${RELEASE_TAG}" ]]; then
-            echo "::error::release-please reported a release but did not emit a tag."
+          release_tag="${TAG_FROM_OUTPUT}"
+          if [[ -z "${release_tag}" ]]; then
+            # Fallback: the newest release is the one release-please just created.
+            release_tag="$(gh release list --repo "${GITHUB_REPOSITORY}" \
+              --limit 1 --json tagName --jq '.[0].tagName')"
+          fi
+          if [[ -z "${release_tag}" ]]; then
+            echo "::error::release-please created a release but the tag could not be resolved."
             exit 1
           fi
+          echo "Dispatching binary build for ${release_tag}"
           gh workflow run release.yml \
             --repo "${GITHUB_REPOSITORY}" \
-            --ref "${RELEASE_TAG}" \
-            -f "tag=${RELEASE_TAG}"
+            --ref "${release_tag}" \
+            -f "tag=${release_tag}"
 
   # 2) On tag push v* (or manual dispatch with a tag): build cross-platform
   #    binaries, sign them with Sigstore keyless, attest provenance, and attach
