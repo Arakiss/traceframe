@@ -17,13 +17,23 @@ Small, verified contributions are preferred over broad rewrites.
 
 ## Local Gate
 
-Run the same baseline as CI before opening or merging work:
+Run the same baseline as CI before opening or merging work. With
+[`just`](https://just.systems) installed, one recipe reproduces the CI verdict:
+
+```bash
+just check
+```
+
+That runs format, clippy, tests, the 80% coverage floor, `cargo deny`, the
+private-files guard, release readiness, and the smokes — the same gates CI
+enforces. The individual steps are also available without `just`:
 
 ```bash
 cargo fmt --check
-cargo clippy -- -D warnings
+cargo clippy --all-targets -- -D warnings
 cargo test
 cargo llvm-cov --workspace --all-targets --fail-under-lines 80
+cargo deny check advisories bans licenses sources
 ```
 
 For changes that affect day-to-day usage, also dogfood Traceframe against
@@ -37,13 +47,39 @@ traceframe ledger list
 
 ## Commit Shape
 
-Use semantic commits with an intent-first subject where possible:
+Traceframe uses [Conventional Commits](https://www.conventionalcommits.org).
+Commit messages drive the changelog and the automated release, so the shape is
+enforced by `commitlint` on every pull request.
+
+Format: `type(scope): imperative subject` — subject ≤72 chars, no trailing
+period.
+
+Accepted types:
+
+| Type | Use for |
+| --- | --- |
+| `feat` | A user-facing capability |
+| `fix` | A bug fix |
+| `perf` | A performance improvement |
+| `security` | A security fix or hardening change |
+| `refactor` | Internal change with no behavior change |
+| `docs` | Documentation only |
+| `test` | Tests only |
+| `build` | Build system or dependency packaging |
+| `ci` | CI configuration |
+| `chore` | Maintenance that does not fit above |
+| `revert` | Reverting a previous commit |
+
+The scope is optional. When present it must be a domain area — `trace`,
+`ledger`, `hook`, `policy`, `render`, `host`, `verify`, `report`,
+`lifecycle` — or a cross-cutting scope — `cli`, `lib`, `docs`, `ci`, `deps`,
+`release`, `security`, `examples`, `scripts`, `skill`.
 
 ```text
-feat: make local traces discoverable before database indexing
-fix: support plain relative output paths
-docs: document the storage contract
-test: cover malformed trace rejection
+feat(ledger): make local traces discoverable before database indexing
+fix(hook): support plain relative output paths
+docs(storage): document the storage contract
+test(verify): cover malformed trace rejection
 ```
 
 Do not create artificial commits only to inflate activity. Public cadence should

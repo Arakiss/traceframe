@@ -15,6 +15,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Verify local agent files not tracked
+        run: sh scripts/check-local-agent-files.sh
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -63,3 +66,31 @@ jobs:
           cargo run -- ledger show --file /tmp/traceframe-ledger.traceframe --run-id ci-dogfood
           cargo run -- verify --file /tmp/traceframe-runs/ci-dogfood.traceframe
           cargo run -- summary --file /tmp/traceframe-runs/ci-dogfood.traceframe
+
+  commitlint:
+    name: commitlint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Lint commit messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.yaml
+          failOnWarnings: true
+
+  cargo-deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Audit dependencies
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans licenses sources

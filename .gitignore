@@ -1,2 +1,8 @@
 /target
 .traceframe/
+
+# Local-only agent instruction and run-state files (never tracked).
+.claude/
+.codex/
+.omx/
+.nahuali/

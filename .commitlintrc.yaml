@@ -1,0 +1,64 @@
+extends:
+  - "@commitlint/config-conventional"
+
+# Project-specific overrides below. See CONTRIBUTING.md for the full table.
+rules:
+  # Commit types accepted by the project.
+  type-enum:
+    - 2
+    - always
+    - - feat
+      - fix
+      - chore
+      - docs
+      - refactor
+      - perf
+      - test
+      - build
+      - ci
+      - revert
+      - security
+
+  # Scope is optional but, when present, must name a domain area or one of the
+  # cross-cutting scopes.
+  scope-enum:
+    - 2
+    - always
+    - - trace
+      - ledger
+      - hook
+      - policy
+      - render
+      - host
+      - verify
+      - report
+      - lifecycle
+      - cli
+      - lib
+      - docs
+      - ci
+      - deps
+      - release
+      - security
+      - examples
+      - scripts
+      - skill
+
+  # Subject: imperative, ≤72 chars, no trailing period, no cased prefixes.
+  subject-case:
+    - 2
+    - never
+    - - "sentence-case"
+      - "start-case"
+      - "pascal-case"
+      - "upper-case"
+  subject-empty: [2, never]
+  subject-full-stop: [2, never, "."]
+  header-max-length: [2, always, 72]
+
+  # Structure checks on body/footer (blank line required), but do not reject
+  # generated update commits on body/footer wrapping alone.
+  body-leading-blank: [2, always]
+  footer-leading-blank: [2, always]
+  body-max-line-length: [0]
+  footer-max-line-length: [0]
