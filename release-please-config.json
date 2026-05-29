@@ -3,7 +3,7 @@
   "release-type": "rust",
   "include-component-in-tag": false,
   "include-v-in-tag": true,
-  "separate-pull-requests": false,
+  "separate-pull-requests": true,
   "bootstrap-sha": "6185a54cedc2e1b76e47b641a101b31e9506187a",
   "pull-request-title-pattern": "chore(release): release ${version}",
   "changelog-sections": [
