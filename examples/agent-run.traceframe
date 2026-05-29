@@ -1,0 +1,8 @@
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-000","kind":"run.started","ts_ms":1000,"seq":0,"payload":{"created_by":"traceframe","status":"started"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-001","kind":"model.call","ts_ms":1010,"seq":1,"payload":{"provider":"openai","model":"gpt-5.5","purpose":"plan file edit"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-002","kind":"permission.decision","ts_ms":1020,"seq":2,"payload":{"source":"policy","capability":"fs.write:README.md","decision":"allow"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-003","kind":"tool.call","ts_ms":1030,"seq":3,"payload":{"tool":"shell","command":"cargo test"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-004","kind":"tool.result","ts_ms":1080,"seq":4,"payload":{"exit_code":101,"stderr":"one test failed"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-005","kind":"permission.decision","ts_ms":1090,"seq":5,"payload":{"source":"policy","capability":"git.push:main","decision":"deny","reason":"public side effect blocked"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-006","kind":"error","ts_ms":1100,"seq":6,"payload":{"message":"verification failed before publish","action":"convert failure into regression test"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-007","kind":"run.finished","ts_ms":1110,"seq":7,"payload":{"status":"failed"}}

@@ -1,0 +1,29 @@
+<svg width="1600" height="520" viewBox="0 0 1600 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">traceframe</title>
+  <desc id="desc">Inspectable traces for AI agent workflows</desc>
+  <rect width="1600" height="520" fill="#0d1117"/>
+  <rect x="64" y="64" width="1472" height="392" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+
+  <path d="M180 184H1420" stroke="#263244" stroke-width="2"/>
+  <path d="M180 278H1420" stroke="#263244" stroke-width="2"/>
+  <path d="M180 372H1420" stroke="#263244" stroke-width="2"/>
+
+  <path d="M288 184C356 188 420 236 484 268" stroke="#60a5fa" stroke-width="7" stroke-linecap="round"/>
+  <path d="M520 286C600 334 682 366 762 372" stroke="#34d399" stroke-width="7" stroke-linecap="round"/>
+  <path d="M798 370C896 354 966 306 1040 282" stroke="#f97316" stroke-width="7" stroke-linecap="round"/>
+  <path d="M1076 272C1160 246 1248 198 1310 186" stroke="#f43f5e" stroke-width="7" stroke-linecap="round"/>
+
+  <circle cx="270" cy="184" r="18" fill="#60a5fa"/>
+  <circle cx="502" cy="278" r="18" fill="#34d399"/>
+  <circle cx="780" cy="372" r="18" fill="#f97316"/>
+  <circle cx="1058" cy="278" r="18" fill="#f43f5e"/>
+  <circle cx="1328" cy="184" r="18" fill="#a78bfa"/>
+
+  <text x="900" y="122" fill="#93a4b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="23" textLength="430" lengthAdjust="spacingAndGlyphs">run -&gt; tool -&gt; decision -&gt; result</text>
+  <text x="900" y="154" fill="#93a4b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="23" textLength="310" lengthAdjust="spacingAndGlyphs">review -&gt; policy/test/eval</text>
+  <text x="238" y="232" fill="#b6c2d2" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20">run.start</text>
+  <text x="456" y="326" fill="#b6c2d2" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20">tool.call</text>
+  <text x="724" y="344" fill="#b6c2d2" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20">decision</text>
+  <text x="1016" y="326" fill="#b6c2d2" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20">result</text>
+  <text x="1282" y="232" fill="#b6c2d2" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20">review</text>
+</svg>

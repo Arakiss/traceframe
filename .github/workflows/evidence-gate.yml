@@ -1,0 +1,49 @@
+name: Evidence gate
+
+# Demonstrates using traceframe as a gate: an agent run leaves a trace, and
+# before a public action you require that trace to be structurally valid
+# (`verify`) and free of unresolved policy violations (`policy-check`).
+#
+# This workflow runs the evidence-gate smoke, which asserts that a clean run
+# clears the gate (exit 0) and a run with an unresolved permission deny is
+# blocked (exit != 0). Copy the "gate" step into your own pipeline and point it
+# at the trace your agent session produced.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build traceframe
+        run: cargo build
+
+      # The gate itself, made explicit so it reads as a copy-paste template:
+      # verify (integrity) AND policy-check (no unresolved deny / unrecorded
+      # sensitive capability) must both pass for the run to clear.
+      - name: Gate the example run (must be BLOCKED — unresolved git.push deny)
+        run: |
+          ./target/debug/traceframe verify --file examples/agent-run.traceframe
+          if ./target/debug/traceframe policy-check --file examples/agent-run.traceframe; then
+            echo "expected policy-check to fail on the example trace" >&2
+            exit 1
+          fi
+          echo "example run correctly blocked by the gate"
+
+      - name: Evidence-gate smoke (clean passes, dirty is blocked)
+        run: sh scripts/evidence-gate-smoke.sh

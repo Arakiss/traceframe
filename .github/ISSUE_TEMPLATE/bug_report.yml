@@ -1,0 +1,63 @@
+name: Bug report
+description: Report incorrect Traceframe behavior.
+title: "bug: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security issues belong in GitHub private security advisories, not public issues.
+
+  - type: input
+    id: version
+    attributes:
+      label: Traceframe version
+      description: Output of `traceframe --version` or commit hash.
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS / Ubuntu / ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      multiple: true
+      options:
+        - CLI
+        - Rust library API
+        - Trace parser / verifier
+        - Ledger
+        - HTML renderer
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Minimal commands and, if relevant, a redacted trace file.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true

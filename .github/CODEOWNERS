@@ -1,0 +1,17 @@
+# Traceframe is currently maintained by a single person.
+#
+# This file keeps review ownership explicit for paths that define the public
+# trace contract, release surface, and governance posture.
+
+*                         @Arakiss
+
+/src/                     @Arakiss
+/tests/                   @Arakiss
+/examples/                @Arakiss
+/docs/                    @Arakiss
+/.github/                 @Arakiss
+/Cargo.toml               @Arakiss
+/Cargo.lock               @Arakiss
+/CHANGELOG.md             @Arakiss
+/CONTRIBUTING.md          @Arakiss
+/SECURITY.md              @Arakiss
