@@ -1,0 +1,238 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+    # A manually pushed tag also builds binaries; tags created by release-please
+    # with GITHUB_TOKEN do not re-trigger workflows, so release-please dispatches
+    # this workflow from the tag ref explicitly (see "Trigger binary build").
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build + attach signed binaries to (e.g. vX.Y.Z)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # 1) On push to main: run release-please. It opens/updates the release PR and,
+  #    when a release is created, dispatches this workflow from the new tag ref
+  #    so the binary build runs and Sigstore identity stays tied to the tag.
+  #    Set the repository variable TRACEFRAME_RELEASE_HOLD=true to pause release
+  #    automation while leaving normal CI active.
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+      && vars.TRACEFRAME_RELEASE_HOLD != 'true'
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Trigger binary build
+        if: ${{ steps.release.outputs['.--release_created'] == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs['.--tag_name'] }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${RELEASE_TAG}" ]]; then
+            echo "::error::release-please reported a release but did not emit a tag."
+            exit 1
+          fi
+          gh workflow run release.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref "${RELEASE_TAG}" \
+            -f "tag=${RELEASE_TAG}"
+
+  # 2) On tag push v* (or manual dispatch with a tag): build cross-platform
+  #    binaries, sign them with Sigstore keyless, attest provenance, and attach
+  #    them to that tag's GitHub release.
+  build-binaries:
+    name: build (${{ matrix.target }})
+    if: >
+      vars.TRACEFRAME_RELEASE_HOLD != 'true'
+      && (
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+        || github.event_name == 'workflow_dispatch'
+      )
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset: traceframe-x86_64-linux
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            asset: traceframe-aarch64-linux
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            asset: traceframe-x86_64-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            asset: traceframe-aarch64-darwin
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # On workflow_dispatch, check out the tag provided via input.
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - name: Resolve and validate release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            upload_tag="${{ github.event.inputs.tag }}"
+          else
+            upload_tag="${GITHUB_REF#refs/tags/}"
+          fi
+          expected_ref="refs/tags/${upload_tag}"
+          if [[ "${GITHUB_REF}" != "${expected_ref}" ]]; then
+            echo "::error::Release signatures are verified against ${expected_ref}, but this run identity is ${GITHUB_REF}. Re-run workflow_dispatch from the tag ref."
+            exit 1
+          fi
+          echo "UPLOAD_TAG=${upload_tag}" >> "$GITHUB_ENV"
+          echo "SIGNER_IDENTITY=https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${expected_ref}" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - uses: sigstore/cosign-installer@v4.1.2
+      - name: Install cross toolchain (linux-aarch64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if sudo env DEBIAN_FRONTEND=noninteractive timeout 300s apt-get update \
+              && sudo env DEBIAN_FRONTEND=noninteractive timeout 300s apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu libc6-dev-arm64-cross; then
+              break
+            fi
+            if [[ "${attempt}" == "3" ]]; then
+              echo "::error::Failed to install Linux aarch64 cross toolchain after 3 attempts."
+              exit 1
+            fi
+            sleep "$((attempt * 10))"
+          done
+          mkdir -p .cargo
+          echo '[target.aarch64-unknown-linux-gnu]'    >  .cargo/config.toml
+          echo 'linker = "aarch64-linux-gnu-gcc"'      >> .cargo/config.toml
+      - name: Build release binary
+        timeout-minutes: 25
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Package + checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cd target/${{ matrix.target }}/release
+          tar czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}.tar.gz" traceframe
+          cd "$GITHUB_WORKSPACE"
+          (cd dist && shasum -a 256 "${{ matrix.asset }}.tar.gz" \
+              > "${{ matrix.asset }}.tar.gz.sha256")
+      - name: Sign + verify artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact="dist/${{ matrix.asset }}.tar.gz"
+          bundle="${artifact}.sigstore.json"
+          cosign sign-blob --yes "${artifact}" --bundle "${bundle}"
+          cosign verify-blob "${artifact}" \
+            --bundle "${bundle}" \
+            --certificate-identity "${SIGNER_IDENTITY}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+      - name: Attest artifact provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/${{ matrix.asset }}.tar.gz
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.UPLOAD_TAG }}
+          files: |
+            dist/${{ matrix.asset }}.tar.gz
+            dist/${{ matrix.asset }}.tar.gz.sha256
+            dist/${{ matrix.asset }}.tar.gz.sigstore.json
+
+  # 3) Generate a CycloneDX SBOM for the release, attach it, and attest it.
+  release-evidence:
+    name: release evidence
+    if: >
+      vars.TRACEFRAME_RELEASE_HOLD != 'true'
+      && (
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+        || github.event_name == 'workflow_dispatch'
+      )
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - name: Resolve and validate release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            upload_tag="${{ github.event.inputs.tag }}"
+          else
+            upload_tag="${GITHUB_REF#refs/tags/}"
+          fi
+          expected_ref="refs/tags/${upload_tag}"
+          if [[ "${GITHUB_REF}" != "${expected_ref}" ]]; then
+            echo "::error::Release evidence is tied to ${expected_ref}, but this run identity is ${GITHUB_REF}. Re-run workflow_dispatch from the tag ref."
+            exit 1
+          fi
+          echo "UPLOAD_TAG=${upload_tag}" >> "$GITHUB_ENV"
+      - name: Prepare evidence directory
+        run: mkdir -p dist
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          artifact-name: traceframe-${{ env.UPLOAD_TAG }}.cdx.json
+          output-file: dist/traceframe-${{ env.UPLOAD_TAG }}.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - name: Upload SBOM release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "${UPLOAD_TAG}" \
+            "dist/traceframe-${UPLOAD_TAG}.cdx.json" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber
+      - name: Attest SBOM provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/traceframe-${{ env.UPLOAD_TAG }}.cdx.json

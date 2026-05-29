@@ -5,7 +5,10 @@ All notable user-facing changes to Traceframe are tracked here.
 Traceframe is pre-1.0. Breaking schema, CLI, and output changes may happen
 while the public harness contract is still being proven.
 
-## Unreleased
+From this release onward the changelog is generated from Conventional Commits;
+new versions are appended above this entry automatically.
+
+## [0.1.0] - 2026-05-29
 
 ### Added
 
