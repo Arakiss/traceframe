@@ -154,6 +154,12 @@ jobs:
           echo 'linker = "aarch64-linux-gnu-gcc"'      >> .cargo/config.toml
       - name: Build release binary
         timeout-minutes: 25
+        # rust-toolchain.toml pins the MSRV channel for development, but the
+        # cross target is installed on the stable toolchain by the setup step
+        # above. Build the release artifact with stable so cross targets resolve
+        # (the host target works on either toolchain).
+        env:
+          RUSTUP_TOOLCHAIN: stable
         run: cargo build --release --target ${{ matrix.target }}
       - name: Package + checksum
         shell: bash
