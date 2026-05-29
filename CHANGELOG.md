@@ -8,6 +8,14 @@ while the public harness contract is still being proven.
 From this release onward the changelog is generated from Conventional Commits;
 new versions are appended above this entry automatically.
 
+## [0.1.2](https://github.com/Arakiss/traceframe/compare/v0.1.1...v0.1.2) (2026-05-29)
+
+
+### Bug fixes
+
+* **release:** build cross targets with the toolchain that has them ([0252a12](https://github.com/Arakiss/traceframe/commit/0252a12f891ff7ebcd256f44642fb85a32058b13))
+* **release:** trigger binary build from aggregate release output ([a1c0396](https://github.com/Arakiss/traceframe/commit/a1c0396a8b0a622db350b25512a4770089e3702c))
+
 ## [0.1.1](https://github.com/Arakiss/traceframe/compare/v0.1.0...v0.1.1) (2026-05-29)
 
 
