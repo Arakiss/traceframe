@@ -21,9 +21,11 @@ SECURITY.md
 docs/harness-integration.md
 docs/hooks.md
 docs/publishing.md
+docs/release-signing.md
 docs/storage.md
 examples/agent-run.traceframe
 examples/harness-recorder.rs
+scripts/check-local-agent-files.sh
 scripts/hook-smoke.sh
 scripts/check-release-readiness.sh
 scripts/host-smoke.sh
