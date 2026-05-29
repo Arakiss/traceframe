@@ -8,6 +8,13 @@ while the public harness contract is still being proven.
 From this release onward the changelog is generated from Conventional Commits;
 new versions are appended above this entry automatically.
 
+## [0.1.1](https://github.com/Arakiss/traceframe/compare/v0.1.0...v0.1.1) (2026-05-29)
+
+
+### Documentation
+
+* document release signing and the automated release flow ([bca68dc](https://github.com/Arakiss/traceframe/commit/bca68dc406d75583c1344ca0ad437e0bf9a8b3f1))
+
 ## [0.1.0] - 2026-05-29
 
 ### Added
