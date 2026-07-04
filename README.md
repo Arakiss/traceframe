@@ -116,6 +116,16 @@ use, `run`, `exec`, and `finish` avoid hand-writing the common `tool.call`,
 `tool.result`, and `run.finished` payloads. `summary`, `inspect`, and `render`
 also work on open traces so interrupted agent runs can still be reviewed.
 
+## Import existing transcripts
+
+Backfill traces from transcripts your harness already wrote (see
+[docs/import.md](docs/import.md)):
+
+```bash
+traceframe import --format claude-code --input session.jsonl
+traceframe ledger rebuild
+```
+
 Once runs accumulate under `.traceframe/runs/`, rebuild the local ledger. Omit
 `--file` when you want `run` to use the default local run directory:
 

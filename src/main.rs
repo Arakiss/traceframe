@@ -83,6 +83,35 @@ enum Command {
         #[arg(long)]
         html: PathBuf,
     },
+    /// Import a harness-native session transcript as a closed trace.
+    ///
+    /// Backfills traces from transcripts a harness already wrote on disk,
+    /// preserving the transcript's own timestamps. With `--dir` (default
+    /// `.traceframe/runs`), the target is `<dir>/<run_id>.traceframe` and the
+    /// run id is derived from the transcript session when `--run-id` is
+    /// omitted.
+    Import {
+        /// Transcript format. Supported: claude-code.
+        #[arg(long)]
+        format: String,
+        /// Transcript file (newline-delimited JSON).
+        #[arg(long)]
+        input: PathBuf,
+        /// Explicit target trace file (mutually exclusive with --dir).
+        #[arg(long)]
+        file: Option<PathBuf>,
+        /// Target run directory (default .traceframe/runs).
+        #[arg(long)]
+        dir: Option<PathBuf>,
+        /// Free-form source label recorded on imported events (default: the format).
+        #[arg(long)]
+        source: Option<String>,
+        #[arg(long)]
+        run_id: Option<String>,
+        /// Overwrite an existing target trace.
+        #[arg(long, default_value_t = false)]
+        force: bool,
+    },
     /// Ingest host hook payloads from agent harnesses.
     Hook {
         #[command(subcommand)]
@@ -207,6 +236,23 @@ fn main() -> Result<()> {
         Command::Inspect { file } => commands::report::inspect(&file)?,
         Command::Summary { file } => commands::report::summary(&file)?,
         Command::Render { file, html } => commands::report::render(&file, &html)?,
+        Command::Import {
+            format,
+            input,
+            file,
+            dir,
+            source,
+            run_id,
+            force,
+        } => commands::import::import(
+            &format,
+            &input,
+            file.as_deref(),
+            dir.as_deref(),
+            source.as_deref(),
+            run_id.as_deref(),
+            force,
+        )?,
         Command::Hook { command } => match command {
             HookCommand::Ingest {
                 file,
