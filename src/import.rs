@@ -59,7 +59,8 @@ pub fn parse_claude_code(input: &Path, run_id: Option<&str>, source: &str) -> Re
 
     let mut stats = ImportStats::default();
     let mut derived_run_id: Option<String> = run_id.map(str::to_string);
-    let mut first_ts: Option<i128> = None;
+    let mut min_ts: Option<i128> = None;
+    let mut max_ts: Option<i128> = None;
     let mut last_ts: Option<i128> = None;
     let mut last_model: Option<String> = None;
     let mut calls: HashMap<String, (String, String)> = HashMap::new();
@@ -95,7 +96,8 @@ pub fn parse_claude_code(input: &Path, run_id: Option<&str>, source: &str) -> Re
             .and_then(parse_rfc3339_ms)
             .or(last_ts)
             .unwrap_or_else(now_ms);
-        first_ts.get_or_insert(ts);
+        min_ts = Some(min_ts.map_or(ts, |current| current.min(ts)));
+        max_ts = Some(max_ts.map_or(ts, |current| current.max(ts)));
         last_ts = Some(ts);
 
         let Some(message) = value.get("message") else {
@@ -199,8 +201,11 @@ pub fn parse_claude_code(input: &Path, run_id: Option<&str>, source: &str) -> Re
         )
     });
 
-    let started_ts = first_ts.unwrap_or_else(now_ms);
-    let finished_ts = last_ts.unwrap_or(started_ts);
+    // Transcripts are not strictly chronological (resumed sessions can carry
+    // older trailing entries), so the run bounds are the min/max timestamps
+    // seen, never the first/last file positions.
+    let started_ts = min_ts.unwrap_or_else(now_ms);
+    let finished_ts = max_ts.unwrap_or(started_ts);
 
     let mut events = Vec::with_capacity(body.len() + 2);
     events.push(build_event(
