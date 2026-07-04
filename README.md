@@ -19,6 +19,9 @@
 
 > **Development status: local MVP.** Traceframe is public, installable from source, and verified by CI, but the trace schema and CLI are still intentionally narrow. Expect breaking schema/CLI changes while the project is tested against real agent workflows. Use it first for local harness inspection, examples, and failure analysis.
 
+> Direction lives in [ROADMAP.md](ROADMAP.md). Agents (and humans) working on
+> this repo start at [AGENTS.md](AGENTS.md).
+
 Traceframe records what an AI agent actually did: model calls, tool calls,
 permission decisions, command results, errors, final state, and the order in
 which those things happened. It is a small Rust crate and CLI for local harness
