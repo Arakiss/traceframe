@@ -37,9 +37,20 @@ storms, protocol violations, invented file paths). Its needs drive v0.2.
 - **Session-directory hook wiring guides** for Claude Code and Codex/OMX
   (`docs/hooks.md`, `docs/codex-hooks.md`), including recommended event
   subsets to keep per-call overhead negligible.
-- **Cross-harness runs.** One operator, two harnesses, one ledger: document
-  and test the `--source` discipline (`claude-code`, `codex`, `policy`) so a
-  mixed fleet lands in comparable traces.
+- **Cursor as a capture host.** Cursor ships an agent-hook surface
+  (`~/.cursor/hooks.json`: `sessionStart`, `preToolUse`/`postToolUse`,
+  `beforeShellExecution`/`afterShellExecution`, `afterFileEdit`, `stop` —
+  see cursor.com/docs/hooks) whose events map naturally onto `run.started`,
+  `tool.call`/`tool.result`, and `run.finished`. Needs: a payload mapping for
+  Cursor's field names (`conversation_id`, `generation_id`,
+  `hook_event_name`) in hook ingestion, a `docs/cursor-hooks.md` wiring
+  guide, and `cursor` exercised in the `--source` tests. Cloud-agent
+  sessions have a reduced hook set — document the gap instead of papering
+  over it.
+- **Cross-harness runs.** One operator, many harnesses, one ledger: document
+  and test the `--source` discipline (`claude-code`, `codex`, `cursor`,
+  `policy`) so a mixed fleet lands in comparable traces. The source label is
+  already free-form at ingestion; the discipline is naming, not code.
 - **Retention.** `traceframe ledger gc --keep-days N` — traces are evidence,
   not hoarding.
 
