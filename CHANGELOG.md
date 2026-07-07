@@ -8,6 +8,25 @@ while the public harness contract is still being proven.
 From this release onward the changelog is generated from Conventional Commits;
 new versions are appended above this entry automatically.
 
+## [0.2.0](https://github.com/Arakiss/traceframe/compare/v0.1.2...v0.2.0) (2026-07-07)
+
+
+### Features
+
+* agent.guess and plan.deviation event kinds ([9bca0ca](https://github.com/Arakiss/traceframe/commit/9bca0ca7db826a2ffd0467c64bfff65bf97128d1))
+* import claude-code session transcripts as closed traces ([9511c8d](https://github.com/Arakiss/traceframe/commit/9511c8dcf681a5bb8ca69e93206261df24a5ac3c))
+
+
+### Bug fixes
+
+* clamp imported run bounds to min/max transcript timestamps ([d752fd9](https://github.com/Arakiss/traceframe/commit/d752fd9ba99e4bf51a387078e594cd7cb4150113))
+
+
+### Documentation
+
+* add roadmap, agent working brief, and codex hook wiring guide ([8af5865](https://github.com/Arakiss/traceframe/commit/8af58653fd58d4cb84093075b6512561e4d95eaf))
+* **roadmap:** Cursor as a verified capture host in v0.3 ([9597fc3](https://github.com/Arakiss/traceframe/commit/9597fc322c4e96fe4fe6fae8727f6d261a4d60a1))
+
 ## [0.1.2](https://github.com/Arakiss/traceframe/compare/v0.1.1...v0.1.2) (2026-05-29)
 
 
