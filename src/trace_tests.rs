@@ -119,6 +119,66 @@ fn summary_counts_events() {
     assert_eq!(summary.status, "success");
     assert_eq!(summary.permission_decisions, 1);
     assert_eq!(summary.event_count, 3);
+    assert_eq!(summary.deviations, 0);
+}
+
+#[test]
+fn deviation_kinds_round_trip() {
+    for (kind, wire) in [
+        (EventKind::AgentGuess, "agent.guess"),
+        (EventKind::PlanDeviation, "plan.deviation"),
+    ] {
+        assert_eq!(kind.as_str(), wire);
+        assert_eq!(wire.parse::<EventKind>().unwrap(), kind);
+        let encoded = serde_json::to_string(&kind).unwrap();
+        assert_eq!(encoded, format!("\"{wire}\""));
+        let decoded: EventKind = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(decoded, kind);
+    }
+}
+
+#[test]
+fn summary_counts_deviations() {
+    let mut trace = valid_trace();
+    trace.events.insert(
+        2,
+        Event {
+            version: TRACEFRAME_VERSION,
+            run_id: "run-test".into(),
+            event_id: "e-guess".into(),
+            kind: EventKind::AgentGuess,
+            ts_ms: 112,
+            seq: 2,
+            payload: json!({
+                "assumption": "assumed the API keeps v1 pagination",
+                "why": "docs unreachable during the run",
+                "prevention": "pin the API version in the task brief"
+            }),
+        },
+    );
+    trace.events.insert(
+        3,
+        Event {
+            version: TRACEFRAME_VERSION,
+            run_id: "run-test".into(),
+            event_id: "e-dev".into(),
+            kind: EventKind::PlanDeviation,
+            ts_ms: 114,
+            seq: 3,
+            payload: json!({
+                "plan": "migrate the schema in one pass",
+                "deviation": "split into two passes",
+                "why": "lock contention on the live table"
+            }),
+        },
+    );
+    for (index, event) in trace.events.iter_mut().enumerate() {
+        event.seq = index as u64;
+    }
+    trace.verify().expect("trace with deviations verifies");
+    let summary = trace.summary();
+    assert_eq!(summary.deviations, 2);
+    assert!(summary.render_text().contains("deviations: 2"));
 }
 
 #[test]

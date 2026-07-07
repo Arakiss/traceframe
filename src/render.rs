@@ -84,6 +84,7 @@ fn render_document(trace: &Trace) -> String {
 fn render_stats(summary: &TraceSummary, duration: &str) -> String {
     let failure_accent = if summary.tool_failures > 0 { "bad" } else { "" };
     let error_accent = if summary.errors > 0 { "bad" } else { "" };
+    let deviation_accent = if summary.deviations > 0 { "warn" } else { "" };
     let cards = [
         stat_card(summary.event_count, "events", ""),
         stat_card(summary.model_calls, "model calls", "model"),
@@ -92,6 +93,7 @@ fn render_stats(summary: &TraceSummary, duration: &str) -> String {
         stat_card(summary.tool_failures, "tool failures", failure_accent),
         stat_card(summary.permission_decisions, "permissions", "info"),
         stat_card(summary.errors, "errors", error_accent),
+        stat_card(summary.deviations, "deviations", deviation_accent),
         text_card(duration, "duration", ""),
     ];
     cards.join("\n")
@@ -227,6 +229,28 @@ fn render_event_body(event: &Event) -> String {
                 kv(&mut out, "detail", &callout(detail));
             }
         }
+        EventKind::AgentGuess => {
+            if let Some(assumption) = pstr(payload, "assumption") {
+                kv(&mut out, "assumption", &callout(assumption));
+            }
+            if let Some(why) = pstr(payload, "why") {
+                kv(&mut out, "why", &escape_html(why));
+            }
+            if let Some(prevention) = pstr(payload, "prevention") {
+                kv(&mut out, "prevention", &escape_html(prevention));
+            }
+        }
+        EventKind::PlanDeviation => {
+            if let Some(plan) = pstr(payload, "plan") {
+                kv(&mut out, "plan", &escape_html(plan));
+            }
+            if let Some(deviation) = pstr(payload, "deviation") {
+                kv(&mut out, "deviation", &callout(deviation));
+            }
+            if let Some(why) = pstr(payload, "why") {
+                kv(&mut out, "why", &escape_html(why));
+            }
+        }
         EventKind::RunFinished => {
             if let Some(status) = pstr(payload, "status") {
                 kv(&mut out, "status", &badge(status, status_class(status)));
@@ -333,6 +357,7 @@ fn event_accent(event: &Event) -> &'static str {
             _ => "ev-warn",
         },
         EventKind::Error => "ev-bad",
+        EventKind::AgentGuess | EventKind::PlanDeviation => "ev-warn",
         EventKind::RunFinished => match pstr(&event.payload, "status") {
             Some("success") => "ev-ok",
             Some("failed") => "ev-bad",
@@ -347,6 +372,7 @@ fn kind_badge_class(kind: EventKind) -> &'static str {
         EventKind::ModelCall => "model",
         EventKind::ToolCall | EventKind::ToolResult => "tool",
         EventKind::Error => "bad",
+        EventKind::AgentGuess | EventKind::PlanDeviation => "warn",
     }
 }
 
@@ -438,6 +464,7 @@ h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; color: v
 .stat.tool .num { color: var(--tool); }
 .stat.model .num { color: var(--model); }
 .stat.info .num { color: var(--info); }
+.stat.warn .num { color: var(--warn); }
 
 .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
 .timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }

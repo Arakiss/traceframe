@@ -28,6 +28,10 @@ pub enum EventKind {
     PermissionDecision,
     #[serde(rename = "error")]
     Error,
+    #[serde(rename = "agent.guess")]
+    AgentGuess,
+    #[serde(rename = "plan.deviation")]
+    PlanDeviation,
     #[serde(rename = "run.finished")]
     RunFinished,
 }
@@ -41,6 +45,8 @@ impl EventKind {
             EventKind::ToolResult => "tool.result",
             EventKind::PermissionDecision => "permission.decision",
             EventKind::Error => "error",
+            EventKind::AgentGuess => "agent.guess",
+            EventKind::PlanDeviation => "plan.deviation",
             EventKind::RunFinished => "run.finished",
         }
     }
@@ -63,6 +69,8 @@ impl FromStr for EventKind {
             "tool.result" => Ok(EventKind::ToolResult),
             "permission.decision" => Ok(EventKind::PermissionDecision),
             "error" => Ok(EventKind::Error),
+            "agent.guess" => Ok(EventKind::AgentGuess),
+            "plan.deviation" => Ok(EventKind::PlanDeviation),
             "run.finished" => Ok(EventKind::RunFinished),
             other => bail!("unknown event kind: {other}"),
         }
@@ -354,6 +362,7 @@ impl Trace {
             tool_failures: 0,
             permission_decisions: 0,
             errors: 0,
+            deviations: 0,
             status: "open".to_string(),
             duration_ms: None,
         };
@@ -370,6 +379,7 @@ impl Trace {
                 }
                 EventKind::PermissionDecision => summary.permission_decisions += 1,
                 EventKind::Error => summary.errors += 1,
+                EventKind::AgentGuess | EventKind::PlanDeviation => summary.deviations += 1,
                 EventKind::RunFinished => {
                     if let Some(status) = event.payload.get("status").and_then(Value::as_str) {
                         summary.status = status.to_string();
@@ -397,6 +407,7 @@ pub struct TraceSummary {
     pub tool_failures: usize,
     pub permission_decisions: usize,
     pub errors: usize,
+    pub deviations: usize,
     pub status: String,
     pub duration_ms: Option<i128>,
 }
@@ -412,7 +423,7 @@ impl TraceSummary {
             .map(|duration| duration.to_string())
             .unwrap_or_else(|| "unknown".to_string());
         format!(
-            "run_id: {}\nstatus: {}\nevents: {}\nmodel_calls: {}\ntool_calls: {}\ntool_results: {}\ntool_failures: {}\npermission_decisions: {}\nerrors: {}\nduration: {duration}\nduration_ms: {duration_ms}\n",
+            "run_id: {}\nstatus: {}\nevents: {}\nmodel_calls: {}\ntool_calls: {}\ntool_results: {}\ntool_failures: {}\npermission_decisions: {}\nerrors: {}\ndeviations: {}\nduration: {duration}\nduration_ms: {duration_ms}\n",
             self.run_id,
             self.status,
             self.event_count,
@@ -422,6 +433,7 @@ impl TraceSummary {
             self.tool_failures,
             self.permission_decisions,
             self.errors,
+            self.deviations,
         )
     }
 }

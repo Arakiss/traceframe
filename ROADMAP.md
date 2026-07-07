@@ -22,10 +22,12 @@ storms, protocol violations, invented file paths). Its needs drive v0.2.
 - **Run metadata event.** `run.meta` carrying model id, token usage
   (input/output/cache), and source label — miners rank findings by cost, so
   cost must live in the trace.
-- **Deviation events.** New event kinds `agent.guess` and `plan.deviation`:
-  the moment an agent improvises through an unknown (unverified assumption,
-  conservative fallback, deviation from an approved plan). Emitted via
-  `traceframe record` or hook ingestion. This is the empirical basis for
+- **Deviation events.** ✅ landed: event kinds `agent.guess` and `plan.deviation`
+  — the moment an agent improvises through an unknown (unverified assumption,
+  conservative fallback, deviation from an approved plan). Payload conventions:
+  `assumption`/`why`/`prevention` and `plan`/`deviation`/`why`. Counted as
+  `deviations` in summaries, rendered with a warn accent, emitted via
+  `traceframe record --kind agent.guess`. This is the empirical basis for
   operator-side "guess logs".
 - **Ledger export.** `traceframe ledger export --jsonl` — a stable, documented
   line format so consumers never parse `.traceframe` internals directly.
