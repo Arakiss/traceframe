@@ -49,14 +49,14 @@ fn render_document(trace: &Trace) -> String {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>traceframe report - {run_id}</title>
+  <title>slod report - {run_id}</title>
   <style>{styles}</style>
 </head>
 <body>
   <main>
     <header class="hero">
       <div class="hero-top">
-        <h1>traceframe report</h1>
+        <h1>slod report</h1>
         <span class="badge lg {status_cls}">{status}</span>
       </div>
       <p class="meta">
@@ -513,11 +513,11 @@ mod tests {
     use serde_json::json;
     use tempfile::tempdir;
 
-    use crate::trace::{Event, EventKind, TRACEFRAME_VERSION, Trace};
+    use crate::trace::{Event, EventKind, SLOD_VERSION, Trace};
 
     fn event(kind: EventKind, seq: u64, ts_ms: i128, payload: serde_json::Value) -> Event {
         Event {
-            version: TRACEFRAME_VERSION,
+            version: SLOD_VERSION,
             run_id: "run-html".into(),
             event_id: format!("e{seq}"),
             kind,

@@ -12,7 +12,7 @@ use serde_json::{Value, json};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-pub const TRACEFRAME_VERSION: u16 = 1;
+pub const SLOD_VERSION: u16 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EventKind {
@@ -91,7 +91,7 @@ pub struct Event {
 impl Event {
     pub fn new(run_id: impl Into<String>, kind: EventKind, seq: u64, payload: Value) -> Self {
         Self {
-            version: TRACEFRAME_VERSION,
+            version: SLOD_VERSION,
             run_id: run_id.into(),
             event_id: Uuid::new_v4().to_string(),
             kind,
@@ -229,7 +229,7 @@ impl Trace {
                 .with_context(|| format!("failed to create {}", parent.display()))?;
         }
 
-        let mut payload = json!({"created_by":"traceframe","status":"started"});
+        let mut payload = json!({"created_by":"slod","status":"started"});
         if let Some(host) = crate::host::context() {
             payload["host"] = host;
         }
@@ -306,7 +306,7 @@ impl Trace {
         let mut previous_seq = None;
 
         for (index, event) in self.events.iter().enumerate() {
-            if event.version != TRACEFRAME_VERSION {
+            if event.version != SLOD_VERSION {
                 bail!(
                     "unsupported event version {} at seq {}",
                     event.version,

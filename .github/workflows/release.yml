@@ -25,7 +25,7 @@ jobs:
   # 1) On push to main: run release-please. It opens/updates the release PR and,
   #    when a release is created, dispatches this workflow from the new tag ref
   #    so the binary build runs and Sigstore identity stays tied to the tag.
-  #    Set the repository variable TRACEFRAME_RELEASE_HOLD=true to pause release
+  #    Set the repository variable SLOD_RELEASE_HOLD=true to pause release
   #    automation while leaving normal CI active.
   release-please:
     name: release-please
@@ -33,7 +33,7 @@ jobs:
     if: >
       github.event_name == 'push'
       && github.ref == 'refs/heads/main'
-      && vars.TRACEFRAME_RELEASE_HOLD != 'true'
+      && vars.SLOD_RELEASE_HOLD != 'true'
     permissions:
       actions: write
       contents: write
@@ -53,7 +53,7 @@ jobs:
         if: ${{ steps.release.outputs.releases_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_FROM_OUTPUT: ${{ steps.release.outputs['traceframe--tag_name'] }}
+          TAG_FROM_OUTPUT: ${{ steps.release.outputs['slod--tag_name'] }}
         shell: bash
         run: |
           set -euo pipefail
@@ -79,7 +79,7 @@ jobs:
   build-binaries:
     name: build (${{ matrix.target }})
     if: >
-      vars.TRACEFRAME_RELEASE_HOLD != 'true'
+      vars.SLOD_RELEASE_HOLD != 'true'
       && (
         (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
         || github.event_name == 'workflow_dispatch'
@@ -96,16 +96,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            asset: traceframe-x86_64-linux
+            asset: slod-x86_64-linux
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            asset: traceframe-aarch64-linux
+            asset: slod-aarch64-linux
           - os: macos-latest
             target: x86_64-apple-darwin
-            asset: traceframe-x86_64-darwin
+            asset: slod-x86_64-darwin
           - os: macos-latest
             target: aarch64-apple-darwin
-            asset: traceframe-aarch64-darwin
+            asset: slod-aarch64-darwin
     steps:
       - uses: actions/checkout@v5
         with:
@@ -167,7 +167,7 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           cd target/${{ matrix.target }}/release
-          tar czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}.tar.gz" traceframe
+          tar czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}.tar.gz" slod
           cd "$GITHUB_WORKSPACE"
           (cd dist && shasum -a 256 "${{ matrix.asset }}.tar.gz" \
               > "${{ matrix.asset }}.tar.gz.sha256")
@@ -198,7 +198,7 @@ jobs:
   release-evidence:
     name: release evidence
     if: >
-      vars.TRACEFRAME_RELEASE_HOLD != 'true'
+      vars.SLOD_RELEASE_HOLD != 'true'
       && (
         (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
         || github.event_name == 'workflow_dispatch'
@@ -235,8 +235,8 @@ jobs:
         with:
           path: .
           format: cyclonedx-json
-          artifact-name: traceframe-${{ env.UPLOAD_TAG }}.cdx.json
-          output-file: dist/traceframe-${{ env.UPLOAD_TAG }}.cdx.json
+          artifact-name: slod-${{ env.UPLOAD_TAG }}.cdx.json
+          output-file: dist/slod-${{ env.UPLOAD_TAG }}.cdx.json
           upload-artifact: false
           upload-release-assets: false
       - name: Upload SBOM release asset
@@ -246,10 +246,10 @@ jobs:
         run: |
           set -euo pipefail
           gh release upload "${UPLOAD_TAG}" \
-            "dist/traceframe-${UPLOAD_TAG}.cdx.json" \
+            "dist/slod-${UPLOAD_TAG}.cdx.json" \
             --repo "${GITHUB_REPOSITORY}" \
             --clobber
       - name: Attest SBOM provenance
         uses: actions/attest@v4
         with:
-          subject-path: dist/traceframe-${{ env.UPLOAD_TAG }}.cdx.json
+          subject-path: dist/slod-${{ env.UPLOAD_TAG }}.cdx.json

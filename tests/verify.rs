@@ -9,10 +9,10 @@ use common::*;
 #[test]
 fn verify_rejects_malformed_trace_file() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("bad.traceframe");
+    let trace_path = dir.path().join("bad.slod");
     fs::write(&trace_path, "{bad}\n").unwrap();
 
-    traceframe()
+    slod()
         .args(["verify", "--file"])
         .arg(&trace_path)
         .assert()
@@ -23,15 +23,15 @@ fn verify_rejects_malformed_trace_file() {
 #[test]
 fn verify_rejects_trace_without_finished_event() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("sample.traceframe");
-    traceframe()
+    let trace_path = dir.path().join("sample.slod");
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "run-demo"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["verify", "--file"])
         .arg(&trace_path)
         .assert()
@@ -42,7 +42,7 @@ fn verify_rejects_trace_without_finished_event() {
 #[test]
 fn verify_allow_open_rejects_finished_event_before_end() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("bad-order.traceframe");
+    let trace_path = dir.path().join("bad-order.slod");
     fs::write(
         &trace_path,
         r#"{"version":1,"run_id":"run-bad","event_id":"e0","kind":"run.started","ts_ms":1,"seq":0,"payload":{}}
@@ -52,7 +52,7 @@ fn verify_allow_open_rejects_finished_event_before_end() {
     )
     .unwrap();
 
-    traceframe()
+    slod()
         .args(["verify", "--file"])
         .arg(&trace_path)
         .args(["--allow-open"])
@@ -64,17 +64,17 @@ fn verify_allow_open_rejects_finished_event_before_end() {
 #[test]
 fn open_trace_can_be_summarized_inspected_rendered_and_optionally_verified() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("open.traceframe");
+    let trace_path = dir.path().join("open.slod");
     let html_path = dir.path().join("open.html");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "run-open"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["summary", "--file"])
         .arg(&trace_path)
         .assert()
@@ -82,14 +82,14 @@ fn open_trace_can_be_summarized_inspected_rendered_and_optionally_verified() {
         .stdout(predicate::str::contains("run_id: run-open"))
         .stdout(predicate::str::contains("status: open"));
 
-    traceframe()
+    slod()
         .args(["inspect", "--file"])
         .arg(&trace_path)
         .assert()
         .success()
         .stdout(predicate::str::contains("run.started"));
 
-    traceframe()
+    slod()
         .args(["render", "--file"])
         .arg(&trace_path)
         .args(["--html"])
@@ -97,7 +97,7 @@ fn open_trace_can_be_summarized_inspected_rendered_and_optionally_verified() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["verify", "--file"])
         .arg(&trace_path)
         .args(["--allow-open"])

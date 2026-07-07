@@ -32,7 +32,7 @@ to build next.
 - Keep it narrow. If a feature analyzes, scores, or proposes, it belongs to a
   layer-4 consumer, not here. When in doubt, re-read ROADMAP «Non-goals».
 - Trace files are append-only and must remain recoverable after partial
-  writes; `traceframe verify` must keep passing on files written by any prior
+  writes; `slod verify` must keep passing on files written by any prior
   released version.
 - The hook adapter stays harness-agnostic: `--source` is a free-form label,
   never a switch that special-cases a vendor.

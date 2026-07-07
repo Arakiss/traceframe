@@ -11,15 +11,15 @@
 set -eu
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-traceframe_bin="${TRACEFRAME_BIN:-$repo_root/target/debug/traceframe}"
-if [ ! -x "$traceframe_bin" ]; then
+slod_bin="${SLOD_BIN:-$repo_root/target/debug/slod}"
+if [ ! -x "$slod_bin" ]; then
   (cd "$repo_root" && cargo build >/dev/null)
 fi
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
-tf() { "$traceframe_bin" "$@"; }
+tf() { "$slod_bin" "$@"; }
 
 # --- gate(): the reusable check. verify AND policy-check must pass. ---
 gate() {
@@ -31,7 +31,7 @@ gate() {
 
 # 1) CLEAN run: a sensitive capability (git push) that was explicitly allowed,
 #    then executed. No unresolved deny. The gate must PASS (exit 0).
-clean="$tmp_dir/clean.traceframe"
+clean="$tmp_dir/clean.slod"
 tf init --file "$clean" --run-id gate-clean >/dev/null
 tf record --file "$clean" --kind permission.decision \
   --payload '{"capability":"git.push:main","decision":"allow"}' >/dev/null
@@ -48,7 +48,7 @@ fi
 
 # 2) DIRTY run: an unresolved permission deny on a public push. The gate must
 #    BLOCK it (policy-check exits != 0). We use the shipped example trace.
-dirty="$repo_root/examples/agent-run.traceframe"
+dirty="$repo_root/examples/agent-run.slod"
 if gate "$dirty"; then
   echo "FAIL dirty run cleared the gate but should have been blocked" >&2
   exit 1
@@ -65,4 +65,4 @@ else
   exit 1
 fi
 
-echo "traceframe evidence-gate smoke: ok"
+echo "slod evidence-gate smoke: ok"

@@ -155,11 +155,11 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::trace::{Event, TRACEFRAME_VERSION};
+    use crate::trace::{Event, SLOD_VERSION};
 
     fn event(seq: u64, kind: EventKind, payload: Value) -> Event {
         Event {
-            version: TRACEFRAME_VERSION,
+            version: SLOD_VERSION,
             run_id: "run-policy".into(),
             event_id: format!("e{seq}"),
             kind,

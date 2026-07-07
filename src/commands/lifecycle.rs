@@ -9,8 +9,8 @@ use std::{
 
 use anyhow::{Context, Result, bail};
 use serde_json::{Value, json};
+use slod::trace::{EventKind, Trace};
 use time::{OffsetDateTime, macros::format_description};
-use traceframe::trace::{EventKind, Trace};
 
 use super::{OUTPUT_PREVIEW_CHARS, eprint_action, parse_payload, print_action};
 
@@ -30,7 +30,7 @@ pub(crate) fn init(file: &Path, run_id: &str, force: bool) -> Result<()> {
 pub(crate) fn record(file: &Path, kind: &str, payload: &str) -> Result<()> {
     let kind = kind.parse::<EventKind>()?;
     if kind == EventKind::RunStarted {
-        bail!("run.started is created by traceframe init");
+        bail!("run.started is created by slod init");
     }
     let payload = parse_payload(payload)?;
     let event = Trace::append(file, kind, payload)?;
@@ -84,7 +84,7 @@ pub(crate) fn run(
     };
 
     let status = if exit_code == 0 { "success" } else { "failed" };
-    finish_trace(&file, status, Some("traceframe run completed"))?;
+    finish_trace(&file, status, Some("slod run completed"))?;
     if exit_code != 0 {
         process::exit(exit_code);
     }
@@ -229,9 +229,9 @@ fn elapsed_ms(started: Instant) -> u64 {
 }
 
 fn default_trace_path(run_id: &str) -> PathBuf {
-    PathBuf::from(".traceframe")
+    PathBuf::from(".slod")
         .join("runs")
-        .join(format!("{run_id}.traceframe"))
+        .join(format!("{run_id}.slod"))
 }
 
 fn default_run_id(command: &[String]) -> String {

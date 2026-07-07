@@ -1,6 +1,6 @@
 name: Evidence gate
 
-# Demonstrates using traceframe as a gate: an agent run leaves a trace, and
+# Demonstrates using slod as a gate: an agent run leaves a trace, and
 # before a public action you require that trace to be structurally valid
 # (`verify`) and free of unresolved policy violations (`policy-check`).
 #
@@ -30,7 +30,7 @@ jobs:
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
 
-      - name: Build traceframe
+      - name: Build slod
         run: cargo build
 
       # The gate itself, made explicit so it reads as a copy-paste template:
@@ -38,8 +38,8 @@ jobs:
       # sensitive capability) must both pass for the run to clear.
       - name: Gate the example run (must be BLOCKED — unresolved git.push deny)
         run: |
-          ./target/debug/traceframe verify --file examples/agent-run.traceframe
-          if ./target/debug/traceframe policy-check --file examples/agent-run.traceframe; then
+          ./target/debug/slod verify --file examples/agent-run.slod
+          if ./target/debug/slod policy-check --file examples/agent-run.slod; then
             echo "expected policy-check to fail on the example trace" >&2
             exit 1
           fi

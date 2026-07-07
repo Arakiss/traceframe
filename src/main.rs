@@ -87,7 +87,7 @@ enum Command {
     ///
     /// Backfills traces from transcripts a harness already wrote on disk,
     /// preserving the transcript's own timestamps. With `--dir` (default
-    /// `.traceframe/runs`), the target is `<dir>/<run_id>.traceframe` and the
+    /// `.slod/runs`), the target is `<dir>/<run_id>.slod` and the
     /// run id is derived from the transcript session when `--run-id` is
     /// omitted.
     Import {
@@ -100,7 +100,7 @@ enum Command {
         /// Explicit target trace file (mutually exclusive with --dir).
         #[arg(long)]
         file: Option<PathBuf>,
-        /// Target run directory (default .traceframe/runs).
+        /// Target run directory (default .slod/runs).
         #[arg(long)]
         dir: Option<PathBuf>,
         /// Free-form source label recorded on imported events (default: the format).
@@ -142,14 +142,14 @@ enum HookCommand {
     /// Read one hook JSON payload from stdin and append mapped events.
     ///
     /// Exactly one of `--file` or `--dir` must be given. With `--dir`, the
-    /// trace file is `<dir>/<run_id>.traceframe`, the run id is derived from
+    /// trace file is `<dir>/<run_id>.slod`, the run id is derived from
     /// the payload's session when `--run-id` is omitted, and the per-session
     /// trace is created on first use without `--init-if-missing`.
     Ingest {
         /// Trace file to append to (mutually exclusive with --dir).
         #[arg(long)]
         file: Option<PathBuf>,
-        /// Per-session run directory; the trace is <dir>/<run_id>.traceframe.
+        /// Per-session run directory; the trace is <dir>/<run_id>.slod.
         #[arg(long)]
         dir: Option<PathBuf>,
         #[arg(long, default_value = "generic")]
@@ -159,9 +159,9 @@ enum HookCommand {
         #[arg(long, default_value_t = false)]
         init_if_missing: bool,
     },
-    /// Wire an agent host so it pipes hook payloads into `traceframe hook ingest`.
+    /// Wire an agent host so it pipes hook payloads into `slod hook ingest`.
     ///
-    /// Idempotent. Merges traceframe `PreToolUse`/`PostToolUse` entries into the
+    /// Idempotent. Merges slod `PreToolUse`/`PostToolUse` entries into the
     /// local hooks file given by `--file` (default `.agent/hooks.json`), never a
     /// global one. Use `--print` to emit the snippet for manual paste instead of
     /// writing it, e.g. when the host's settings file is global or delicate.
@@ -185,21 +185,21 @@ enum HookCommand {
 enum LedgerCommand {
     /// Rebuild a ledger from trace files.
     Rebuild {
-        #[arg(long, default_value = ".traceframe/runs")]
+        #[arg(long, default_value = ".slod/runs")]
         dir: PathBuf,
-        #[arg(long, default_value = ".traceframe/ledger.traceframe")]
+        #[arg(long, default_value = ".slod/ledger.slod")]
         out: PathBuf,
     },
     /// List runs from a ledger.
     List {
-        #[arg(long, default_value = ".traceframe/ledger.traceframe")]
+        #[arg(long, default_value = ".slod/ledger.slod")]
         file: PathBuf,
         #[arg(long)]
         status: Option<String>,
     },
     /// Show one run from a ledger.
     Show {
-        #[arg(long, default_value = ".traceframe/ledger.traceframe")]
+        #[arg(long, default_value = ".slod/ledger.slod")]
         file: PathBuf,
         #[arg(long)]
         run_id: String,

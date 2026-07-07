@@ -7,16 +7,16 @@ use common::*;
 #[test]
 fn policy_check_passes_on_clean_trace() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("clean.traceframe");
+    let trace_path = dir.path().join("clean.slod");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "run-clean"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -28,7 +28,7 @@ fn policy_check_passes_on_clean_trace() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -40,14 +40,14 @@ fn policy_check_passes_on_clean_trace() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["finish", "--file"])
         .arg(&trace_path)
         .args(["--status", "success"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["policy-check", "--file"])
         .arg(&trace_path)
         .assert()
@@ -58,16 +58,16 @@ fn policy_check_passes_on_clean_trace() {
 #[test]
 fn policy_check_fails_on_unresolved_deny() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("deny.traceframe");
+    let trace_path = dir.path().join("deny.slod");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "run-deny"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -79,14 +79,14 @@ fn policy_check_fails_on_unresolved_deny() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["finish", "--file"])
         .arg(&trace_path)
         .args(["--status", "failed"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["policy-check", "--file"])
         .arg(&trace_path)
         .assert()
@@ -98,16 +98,16 @@ fn policy_check_fails_on_unresolved_deny() {
 #[test]
 fn policy_check_fails_on_git_push_without_allow() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("push.traceframe");
+    let trace_path = dir.path().join("push.slod");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "run-push"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -119,14 +119,14 @@ fn policy_check_fails_on_git_push_without_allow() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["finish", "--file"])
         .arg(&trace_path)
         .args(["--status", "success"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["policy-check", "--file"])
         .arg(&trace_path)
         .assert()

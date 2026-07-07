@@ -8,7 +8,7 @@ use std::{
 
 use anyhow::{Context, Result, bail};
 use serde_json::{Map, Value, json};
-use traceframe::{
+use slod::{
     hook::{derive_run_id, map_hook_payload, normalize_source},
     trace::{EventKind, Trace},
 };
@@ -22,7 +22,7 @@ pub(crate) fn ingest(
     run_id: Option<&str>,
     init_if_missing: bool,
 ) -> Result<()> {
-    // The source is a free-form label the host chooses; traceframe stores it
+    // The source is a free-form label the host chooses; slod stores it
     // verbatim and never special-cases any harness name.
     let source = normalize_source(source);
     let mut input = String::new();
@@ -50,7 +50,7 @@ pub(crate) fn ingest(
         (Some(dir), None) => {
             fs::create_dir_all(dir)
                 .with_context(|| format!("failed to create {}", dir.display()))?;
-            (dir.join(format!("{effective_run_id}.traceframe")), true)
+            (dir.join(format!("{effective_run_id}.slod")), true)
         }
         (None, Some(file)) => (file.to_path_buf(), init_if_missing),
         (Some(_), Some(_)) => bail!("pass exactly one of --file or --dir, not both"),
@@ -87,7 +87,7 @@ pub(crate) fn ingest(
     Ok(())
 }
 
-/// Wire an agent host so it pipes hook payloads into `traceframe hook ingest`.
+/// Wire an agent host so it pipes hook payloads into `slod hook ingest`.
 ///
 /// The wiring is written to a local hooks file (default `.agent/hooks.json`) in
 /// the standard `PreToolUse`/`PostToolUse` shape most agent harnesses read. The
@@ -114,7 +114,7 @@ pub(crate) fn install(file: &Path, source: &str, print: bool, run_id: Option<&st
                 ("command", command.clone()),
                 (
                     "note",
-                    "paste this into the host's hooks/settings file; traceframe writes nothing in --print mode".to_string(),
+                    "paste this into the host's hooks/settings file; slod writes nothing in --print mode".to_string(),
                 ),
             ],
         );
@@ -153,14 +153,14 @@ pub(crate) fn install(file: &Path, source: &str, print: bool, run_id: Option<&st
     Ok(())
 }
 
-/// Build the `traceframe hook ingest` command line a host hook should run. The
-/// payload arrives on stdin. We wire `--dir .traceframe/runs` so each host
-/// session lands in its own per-session trace (`<run_id>.traceframe`) that is
+/// Build the `slod hook ingest` command line a host hook should run. The
+/// payload arrives on stdin. We wire `--dir .slod/runs` so each host
+/// session lands in its own per-session trace (`<run_id>.slod`) that is
 /// created on first use; the run id is derived from the payload's session, so
 /// the wired command never has to carry `--run-id` or `--init-if-missing`.
 /// An explicit `--run-id` is still pinned when the operator passes one.
 fn ingest_command_line(source: &str, run_id: Option<&str>) -> String {
-    let mut command = format!("traceframe hook ingest --source {source} --dir .traceframe/runs");
+    let mut command = format!("slod hook ingest --source {source} --dir .slod/runs");
     if let Some(run_id) = run_id {
         command.push_str(&format!(" --run-id {run_id}"));
     }
@@ -207,9 +207,9 @@ fn hooks_object(root: &mut Value) -> Option<&mut Map<String, Value>> {
     hooks.as_object_mut()
 }
 
-/// Insert a traceframe hook entry under `hooks.<event>` while preserving any
+/// Insert a slod hook entry under `hooks.<event>` while preserving any
 /// existing entries. Returns false (idempotent no-op) when an equivalent
-/// traceframe entry is already present, or when foreign config blocks the merge.
+/// slod entry is already present, or when foreign config blocks the merge.
 fn merge_hook(root: &mut Value, event: &str, command: &str) -> bool {
     let Some(hooks) = hooks_object(root) else {
         // A non-object value under the `hooks` key is foreign config we do not
@@ -225,7 +225,7 @@ fn merge_hook(root: &mut Value, event: &str, command: &str) -> bool {
         return false;
     };
 
-    let already_present = entries.iter().any(entry_has_traceframe);
+    let already_present = entries.iter().any(entry_has_slod);
     if already_present {
         return false;
     }
@@ -233,8 +233,8 @@ fn merge_hook(root: &mut Value, event: &str, command: &str) -> bool {
     true
 }
 
-/// True when a hook entry already runs a `traceframe hook ingest` command.
-fn entry_has_traceframe(entry: &Value) -> bool {
+/// True when a hook entry already runs a `slod hook ingest` command.
+fn entry_has_slod(entry: &Value) -> bool {
     entry
         .get("hooks")
         .and_then(Value::as_array)
@@ -242,7 +242,7 @@ fn entry_has_traceframe(entry: &Value) -> bool {
             hooks.iter().any(|hook| {
                 hook.get("command")
                     .and_then(Value::as_str)
-                    .is_some_and(|command| command.contains("traceframe hook ingest"))
+                    .is_some_and(|command| command.contains("slod hook ingest"))
             })
         })
         .unwrap_or(false)

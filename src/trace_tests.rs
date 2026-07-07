@@ -7,7 +7,7 @@ fn valid_trace() -> Trace {
     Trace {
         events: vec![
             Event {
-                version: TRACEFRAME_VERSION,
+                version: SLOD_VERSION,
                 run_id: "run-test".into(),
                 event_id: "e0".into(),
                 kind: EventKind::RunStarted,
@@ -16,7 +16,7 @@ fn valid_trace() -> Trace {
                 payload: json!({"status":"started"}),
             },
             Event {
-                version: TRACEFRAME_VERSION,
+                version: SLOD_VERSION,
                 run_id: "run-test".into(),
                 event_id: "e1".into(),
                 kind: EventKind::PermissionDecision,
@@ -25,7 +25,7 @@ fn valid_trace() -> Trace {
                 payload: json!({"decision":"allow"}),
             },
             Event {
-                version: TRACEFRAME_VERSION,
+                version: SLOD_VERSION,
                 run_id: "run-test".into(),
                 event_id: "e2".into(),
                 kind: EventKind::RunFinished,
@@ -46,7 +46,7 @@ fn event_kind_rejects_unknown_values() {
 #[test]
 fn event_serialization_round_trips() {
     let event = Event {
-        version: TRACEFRAME_VERSION,
+        version: SLOD_VERSION,
         run_id: "run-test".into(),
         event_id: "event-test".into(),
         kind: EventKind::ToolCall,
@@ -100,7 +100,7 @@ fn open_trace_verifies_without_finished_event() {
 fn trace_rejects_run_finished_before_last_event() {
     let mut trace = valid_trace();
     trace.events.push(Event {
-        version: TRACEFRAME_VERSION,
+        version: SLOD_VERSION,
         run_id: "run-test".into(),
         event_id: "e3".into(),
         kind: EventKind::ToolCall,
@@ -143,7 +143,7 @@ fn summary_counts_deviations() {
     trace.events.insert(
         2,
         Event {
-            version: TRACEFRAME_VERSION,
+            version: SLOD_VERSION,
             run_id: "run-test".into(),
             event_id: "e-guess".into(),
             kind: EventKind::AgentGuess,
@@ -159,7 +159,7 @@ fn summary_counts_deviations() {
     trace.events.insert(
         3,
         Event {
-            version: TRACEFRAME_VERSION,
+            version: SLOD_VERSION,
             run_id: "run-test".into(),
             event_id: "e-dev".into(),
             kind: EventKind::PlanDeviation,
@@ -184,7 +184,7 @@ fn summary_counts_deviations() {
 #[test]
 fn recorder_captures_harness_events() {
     let dir = tempdir().unwrap();
-    let path = dir.path().join("run.traceframe");
+    let path = dir.path().join("run.slod");
 
     let recorder = TraceRecorder::start(&path, "run-recorder", false).unwrap();
     recorder.model_call("openai", "gpt-5.5").unwrap();
@@ -213,7 +213,7 @@ fn recorder_captures_harness_events() {
 #[test]
 fn recorder_can_attach_to_existing_trace() {
     let dir = tempdir().unwrap();
-    let path = dir.path().join("attached.traceframe");
+    let path = dir.path().join("attached.slod");
     Trace::init(&path, "run-attached", false).unwrap();
 
     let recorder = TraceRecorder::open(&path);

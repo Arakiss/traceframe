@@ -9,8 +9,8 @@ fn init_run_started_carries_cwd_and_git_context() {
     let repo = dir.path();
     init_git_repo(repo);
 
-    let trace_path = repo.join("host.traceframe");
-    traceframe()
+    let trace_path = repo.join("host.slod");
+    slod()
         .current_dir(repo)
         .args(["init", "--file"])
         .arg(&trace_path)
@@ -43,8 +43,8 @@ fn run_run_started_carries_host_context() {
     let repo = dir.path();
     init_git_repo(repo);
 
-    let trace_path = repo.join("run-host.traceframe");
-    traceframe()
+    let trace_path = repo.join("run-host.slod");
+    slod()
         .current_dir(repo)
         .args(["run", "--file"])
         .arg(&trace_path)
@@ -72,8 +72,8 @@ fn init_outside_git_repo_keeps_cwd_and_omits_git() {
     let workdir = dir.path();
     // No git init: the directory is not inside any repository.
 
-    let trace_path = workdir.join("nogit.traceframe");
-    traceframe()
+    let trace_path = workdir.join("nogit.slod");
+    slod()
         .current_dir(workdir)
         .args(["init", "--file"])
         .arg(&trace_path)

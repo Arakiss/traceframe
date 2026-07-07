@@ -1,4 +1,6 @@
 /target
+.slod/
+# Legacy local trace data from before the traceframe -> slod rename.
 .traceframe/
 
 # Local-only agent instruction and run-state files (never tracked).

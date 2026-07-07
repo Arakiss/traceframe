@@ -1,6 +1,6 @@
 # Host Smoke
 
-`scripts/host-smoke.sh` is the real local dogfood path for Traceframe. It uses
+`scripts/host-smoke.sh` is the real local dogfood path for Slod. It uses
 the built CLI against a temporary workspace and checks the behavior an agent
 harness actually relies on:
 
@@ -21,7 +21,7 @@ sh scripts/host-smoke.sh
 To test a specific binary:
 
 ```bash
-TRACEFRAME_BIN=target/debug/traceframe sh scripts/host-smoke.sh
+SLOD_BIN=target/debug/slod sh scripts/host-smoke.sh
 ```
 
 CI runs this script after the release-readiness gate so regressions are caught

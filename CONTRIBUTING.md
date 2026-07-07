@@ -1,6 +1,6 @@
-# Contributing to Traceframe
+# Contributing to Slod
 
-Traceframe is early, but the project is intentionally strict about evidence.
+Slod is early, but the project is intentionally strict about evidence.
 Small, verified contributions are preferred over broad rewrites.
 
 ## Ground Rules
@@ -36,18 +36,18 @@ cargo llvm-cov --workspace --all-targets --fail-under-lines 80
 cargo deny check advisories bans licenses sources
 ```
 
-For changes that affect day-to-day usage, also dogfood Traceframe against
+For changes that affect day-to-day usage, also dogfood Slod against
 itself:
 
 ```bash
-traceframe run --run-id local-gate -- cargo test
-traceframe ledger rebuild
-traceframe ledger list
+slod run --run-id local-gate -- cargo test
+slod ledger rebuild
+slod ledger list
 ```
 
 ## Commit Shape
 
-Traceframe uses [Conventional Commits](https://www.conventionalcommits.org).
+Slod uses [Conventional Commits](https://www.conventionalcommits.org).
 Commit messages drive the changelog and the automated release, so the shape is
 enforced by `commitlint` on every pull request.
 

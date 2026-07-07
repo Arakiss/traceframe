@@ -6,7 +6,7 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   package_args="--allow-dirty"
 fi
 
-tmp_file="${TMPDIR:-/tmp}/traceframe-package-list.$$"
+tmp_file="${TMPDIR:-/tmp}/slod-package-list.$$"
 trap 'rm -f "$tmp_file"' EXIT
 
 cargo package $package_args --list > "$tmp_file"
@@ -23,13 +23,13 @@ docs/hooks.md
 docs/publishing.md
 docs/release-signing.md
 docs/storage.md
-examples/agent-run.traceframe
+examples/agent-run.slod
 examples/harness-recorder.rs
 scripts/check-local-agent-files.sh
 scripts/hook-smoke.sh
 scripts/check-release-readiness.sh
 scripts/host-smoke.sh
-skills/traceframe/SKILL.md
+skills/slod/SKILL.md
 src/hook.rs
 src/trace.rs
 src/ledger.rs
@@ -45,4 +45,4 @@ done
 cargo package $package_args >/dev/null
 cargo run --example harness-recorder >/dev/null
 
-echo "traceframe release readiness: ok"
+echo "slod release readiness: ok"

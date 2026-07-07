@@ -4,21 +4,21 @@ set -eu
 repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$repo_root"
 
-traceframe_bin="${TRACEFRAME_BIN:-$repo_root/target/debug/traceframe}"
-if [ ! -x "$traceframe_bin" ]; then
+slod_bin="${SLOD_BIN:-$repo_root/target/debug/slod}"
+if [ ! -x "$slod_bin" ]; then
   cargo build >/dev/null
 fi
 
-tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/traceframe-hook-smoke.XXXXXX")"
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/slod-hook-smoke.XXXXXX")"
 trap 'rm -rf "$tmp_dir"' EXIT
 
-runs_dir="$tmp_dir/.traceframe/runs"
-reports_dir="$tmp_dir/.traceframe/reports"
-ledger_file="$tmp_dir/.traceframe/ledger.traceframe"
+runs_dir="$tmp_dir/.slod/runs"
+reports_dir="$tmp_dir/.slod/reports"
+ledger_file="$tmp_dir/.slod/ledger.slod"
 mkdir -p "$runs_dir" "$reports_dir"
 
 run_tf() {
-  "$traceframe_bin" "$@"
+  "$slod_bin" "$@"
 }
 
 assert_contains() {
@@ -37,7 +37,7 @@ assert_contains() {
 # created on first use). We pin --run-id here only so the rest of the smoke can
 # reference a stable file name; the wired end-to-end check below proves the
 # zero-flag form works too. The payloads below mimic a generic agent harness.
-hook_trace="$runs_dir/hook-smoke.traceframe"
+hook_trace="$runs_dir/hook-smoke.slod"
 hook_report="$reports_dir/hook-smoke.html"
 
 run_tf hook ingest \
@@ -77,7 +77,7 @@ run_tf finish \
   --status failed \
   --summary "hook smoke completed with a simulated hook error" \
   >"$tmp_dir/hook.finish"
-assert_contains "$tmp_dir/hook.finish" "traceframe finish"
+assert_contains "$tmp_dir/hook.finish" "slod finish"
 
 run_tf verify --file "$hook_trace" >"$tmp_dir/hook.verify"
 assert_contains "$tmp_dir/hook.verify" "valid trace"
@@ -97,7 +97,7 @@ assert_contains "$tmp_dir/hook.inspect" "simulated host hook failure"
 
 run_tf render --file "$hook_trace" --html "$hook_report" >/dev/null
 test -s "$hook_report"
-assert_contains "$hook_report" "traceframe report"
+assert_contains "$hook_report" "slod report"
 
 run_tf ledger rebuild --dir "$runs_dir" --out "$ledger_file" >"$tmp_dir/ledger.rebuild"
 assert_contains "$tmp_dir/ledger.rebuild" "entries     1"
@@ -112,10 +112,10 @@ assert_contains "$tmp_dir/ledger.show" "permission_decisions: 1"
 hooks_file="$tmp_dir/.agent/hooks.json"
 (
   cd "$tmp_dir"
-  "$traceframe_bin" hook install --print >"$tmp_dir/install.print"
+  "$slod_bin" hook install --print >"$tmp_dir/install.print"
 )
-assert_contains "$tmp_dir/install.print" "traceframe hook ingest"
-assert_contains "$tmp_dir/install.print" "--dir .traceframe/runs"
+assert_contains "$tmp_dir/install.print" "slod hook ingest"
+assert_contains "$tmp_dir/install.print" "--dir .slod/runs"
 assert_contains "$tmp_dir/install.print" "PreToolUse"
 test ! -f "$hooks_file"
 
@@ -125,21 +125,21 @@ mkdir -p "$tmp_dir/.agent"
 printf '%s\n' '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"existing-tool"}]}]}}' >"$hooks_file"
 (
   cd "$tmp_dir"
-  "$traceframe_bin" hook install >"$tmp_dir/install.first"
+  "$slod_bin" hook install >"$tmp_dir/install.first"
 )
 assert_contains "$tmp_dir/install.first" "wired"
 assert_contains "$hooks_file" "existing-tool"
-assert_contains "$hooks_file" "traceframe hook ingest"
+assert_contains "$hooks_file" "slod hook ingest"
 # Entries must be nested under "hooks" so a host loads them.
 assert_contains "$tmp_dir/install.print" "\"hooks\""
 (
   cd "$tmp_dir"
-  "$traceframe_bin" hook install >"$tmp_dir/install.second"
+  "$slod_bin" hook install >"$tmp_dir/install.second"
 )
 assert_contains "$tmp_dir/install.second" "already wired"
-ingest_count="$(grep -c "traceframe hook ingest" "$hooks_file")"
+ingest_count="$(grep -c "slod hook ingest" "$hooks_file")"
 if [ "$ingest_count" -ne 2 ]; then
-  echo "expected exactly 2 traceframe hook entries after idempotent install, got $ingest_count" >&2
+  echo "expected exactly 2 slod hook entries after idempotent install, got $ingest_count" >&2
   cat "$hooks_file" >&2
   exit 1
 fi
@@ -148,25 +148,25 @@ fi
 # with a payload on stdin, proving the wired command works at runtime (the bug
 # this design fixes was a wired command that failed for lack of --run-id).
 wired_command="$(
-  "$traceframe_bin" hook install --print 2>/dev/null \
-    | sed -n 's/.*"command": "\(traceframe hook ingest[^"]*\)".*/\1/p' \
+  "$slod_bin" hook install --print 2>/dev/null \
+    | sed -n 's/.*"command": "\(slod hook ingest[^"]*\)".*/\1/p' \
     | head -n1
 )"
 if [ -z "$wired_command" ]; then
   echo "could not extract wired ingest command from install --print" >&2
   exit 1
 fi
-wired_args="${wired_command#traceframe }"
+wired_args="${wired_command#slod }"
 wired_workspace="$tmp_dir/wired"
 mkdir -p "$wired_workspace"
 (
   cd "$wired_workspace"
   # shellcheck disable=SC2086
   printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"cargo test"},"session_id":"wired-session"}' \
-    | "$traceframe_bin" $wired_args >"$tmp_dir/wired.out"
+    | "$slod_bin" $wired_args >"$tmp_dir/wired.out"
 )
 assert_contains "$tmp_dir/wired.out" "tool.call#1"
-wired_trace="$wired_workspace/.traceframe/runs/run-wired-session.traceframe"
+wired_trace="$wired_workspace/.slod/runs/run-wired-session.slod"
 test -f "$wired_trace" || { echo "wired command did not create $wired_trace" >&2; exit 1; }
 run_tf verify --allow-open --file "$wired_trace" >"$tmp_dir/wired.verify"
 assert_contains "$tmp_dir/wired.verify" "valid open trace"
@@ -175,7 +175,7 @@ assert_contains "$tmp_dir/wired.verify" "valid open trace"
 # hooks as the canonical tool "Bash" with the command under tool_input.command
 # and the result under tool_response (output + exit_code). Prove the wired
 # adapter maps a genuine PreToolUse/PostToolUse pair into tool.call + tool.result.
-real_runs="$tmp_dir/real/.traceframe/runs"
+real_runs="$tmp_dir/real/.slod/runs"
 mkdir -p "$tmp_dir/real"
 printf '%s' '{"session_id":"00000000-0000-0000-0000-000000000000","turn_id":"11111111-1111-1111-1111-111111111111","cwd":"/tmp/ws","hook_event_name":"PreToolUse","permission_mode":"default","tool_name":"Bash","tool_input":{"command":"cargo test"},"tool_use_id":"call-aaaa"}' \
   | run_tf hook ingest --source generic --dir "$real_runs" >"$tmp_dir/real.pre"
@@ -183,7 +183,7 @@ assert_contains "$tmp_dir/real.pre" "tool.call#1"
 printf '%s' '{"session_id":"00000000-0000-0000-0000-000000000000","turn_id":"11111111-1111-1111-1111-111111111111","cwd":"/tmp/ws","hook_event_name":"PostToolUse","permission_mode":"default","tool_name":"Bash","tool_input":{"command":"cargo test"},"tool_response":{"output":"test result: ok. 12 passed","exit_code":0},"tool_use_id":"call-aaaa"}' \
   | run_tf hook ingest --source generic --dir "$real_runs" >"$tmp_dir/real.post"
 assert_contains "$tmp_dir/real.post" "tool.result#2"
-real_trace="$real_runs/run-00000000-0000-0000-0000-000000000000.traceframe"
+real_trace="$real_runs/run-00000000-0000-0000-0000-000000000000.slod"
 test -f "$real_trace" || { echo "real payload did not create $real_trace" >&2; exit 1; }
 assert_contains "$real_trace" '"tool":"Bash"'
 assert_contains "$real_trace" '"command":"cargo test"'
@@ -193,7 +193,7 @@ assert_contains "$real_trace" '"exit_code":0'
 # hook install --print emits a snippet a host operator can paste by hand.
 (
   cd "$tmp_dir"
-  "$traceframe_bin" hook install --print >"$tmp_dir/install.snippet"
+  "$slod_bin" hook install --print >"$tmp_dir/install.snippet"
 )
 assert_contains "$tmp_dir/install.snippet" "paste this into the host"
 assert_contains "$tmp_dir/install.snippet" "source generic"
@@ -204,7 +204,7 @@ run_tf policy-check --file "$hook_trace" >"$tmp_dir/policy.clean"
 assert_contains "$tmp_dir/policy.clean" "result      clean"
 
 # policy-check failure: a permission deny with no later allow.
-deny_trace="$runs_dir/policy-deny.traceframe"
+deny_trace="$runs_dir/policy-deny.slod"
 run_tf init --file "$deny_trace" --run-id policy-deny --force >/dev/null
 run_tf record --file "$deny_trace" --kind permission.decision --payload '{"capability":"fs.write:secrets","decision":"deny"}' >/dev/null
 run_tf finish --file "$deny_trace" --status failed >/dev/null
@@ -219,7 +219,7 @@ fi
 assert_contains "$tmp_dir/policy.deny" "unresolved deny"
 
 # policy-check failure: a git push tool.call with no prior allow.
-push_trace="$runs_dir/policy-push.traceframe"
+push_trace="$runs_dir/policy-push.slod"
 run_tf init --file "$push_trace" --run-id policy-push --force >/dev/null
 run_tf record --file "$push_trace" --kind tool.call --payload '{"tool":"shell","command":"git push --force origin main"}' >/dev/null
 run_tf finish --file "$push_trace" --status success >/dev/null
@@ -233,4 +233,4 @@ if [ "$push_code" -eq 0 ]; then
 fi
 assert_contains "$tmp_dir/policy.push" "sensitive tool.call"
 
-echo "traceframe hook smoke: ok"
+echo "slod hook smoke: ok"

@@ -1,6 +1,6 @@
 # Code of Conduct
 
-Traceframe follows a simple contribution standard:
+Slod follows a simple contribution standard:
 
 - be precise;
 - assume good faith;

@@ -1,14 +1,13 @@
 [package]
-name = "traceframe"
+name = "slod"
 version = "0.1.2"
 edition = "2024"
 rust-version = "1.94"
 description = "Local-first trace recorder and inspector for AI agent workflows."
 license = "MIT"
-repository = "https://github.com/Arakiss/traceframe"
-homepage = "https://traceframe.dev"
+repository = "https://github.com/Arakiss/slod"
+homepage = "https://github.com/Arakiss/slod"
 readme = "README.md"
-authors = ["Petru Arakiss <petruarakiss@gmail.com>"]
 keywords = ["ai-agents", "trace", "cli", "observability", "harness"]
 categories = ["command-line-utilities", "development-tools::debugging"]
 include = [

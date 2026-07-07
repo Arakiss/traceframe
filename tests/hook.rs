@@ -9,9 +9,9 @@ use common::*;
 #[test]
 fn hook_ingest_can_initialize_missing_trace_and_record_tool_events() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("hook.traceframe");
+    let trace_path = dir.path().join("hook.slod");
 
-    traceframe()
+    slod()
         .args([
             "hook",
             "ingest",
@@ -28,10 +28,10 @@ fn hook_ingest_can_initialize_missing_trace_and_record_tool_events() {
         )
         .assert()
         .success()
-        .stdout(predicate::str::contains("traceframe hook ingest"))
+        .stdout(predicate::str::contains("slod hook ingest"))
         .stdout(predicate::str::contains("tool.call#1"));
 
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic", "--file"])
         .arg(&trace_path)
         .write_stdin(
@@ -41,7 +41,7 @@ fn hook_ingest_can_initialize_missing_trace_and_record_tool_events() {
         .success()
         .stdout(predicate::str::contains("tool.result#2"));
 
-    traceframe()
+    slod()
         .args(["summary", "--file"])
         .arg(&trace_path)
         .assert()
@@ -50,14 +50,14 @@ fn hook_ingest_can_initialize_missing_trace_and_record_tool_events() {
         .stdout(predicate::str::contains("tool_calls: 1"))
         .stdout(predicate::str::contains("tool_results: 1"));
 
-    traceframe()
+    slod()
         .args(["finish", "--file"])
         .arg(&trace_path)
         .args(["--status", "success"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["verify", "--file"])
         .arg(&trace_path)
         .assert()
@@ -72,9 +72,9 @@ fn hook_ingest_can_initialize_missing_trace_and_record_tool_events() {
 #[test]
 fn hook_ingest_stores_free_form_source_label_verbatim() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("hook.traceframe");
+    let trace_path = dir.path().join("hook.slod");
 
-    traceframe()
+    slod()
         .args([
             "hook",
             "ingest",
@@ -101,16 +101,16 @@ fn hook_ingest_stores_free_form_source_label_verbatim() {
 #[test]
 fn hook_ingest_records_permission_and_error_events() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("hook.traceframe");
+    let trace_path = dir.path().join("hook.slod");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "hook-run"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "policy", "--file"])
         .arg(&trace_path)
         .write_stdin(
@@ -120,7 +120,7 @@ fn hook_ingest_records_permission_and_error_events() {
         .success()
         .stdout(predicate::str::contains("permission.decision#1"));
 
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic", "--file"])
         .arg(&trace_path)
         .write_stdin(
@@ -130,7 +130,7 @@ fn hook_ingest_records_permission_and_error_events() {
         .success()
         .stdout(predicate::str::contains("error#2"));
 
-    traceframe()
+    slod()
         .args(["inspect", "--file"])
         .arg(&trace_path)
         .assert()
@@ -142,9 +142,9 @@ fn hook_ingest_records_permission_and_error_events() {
 #[test]
 fn hook_ingest_rejects_missing_trace_without_init_flag() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("missing.traceframe");
+    let trace_path = dir.path().join("missing.slod");
 
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--file"])
         .arg(&trace_path)
         .write_stdin(r#"{"hook_event_name":"PreToolUse","tool_name":"Bash"}"#)
@@ -156,16 +156,16 @@ fn hook_ingest_rejects_missing_trace_without_init_flag() {
 #[test]
 fn hook_ingest_rejects_empty_stdin() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("hook.traceframe");
+    let trace_path = dir.path().join("hook.slod");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "hook-run"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--file"])
         .arg(&trace_path)
         .write_stdin("")
@@ -177,9 +177,9 @@ fn hook_ingest_rejects_empty_stdin() {
 #[test]
 fn hook_ingest_does_not_initialize_trace_for_invalid_payload() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("invalid.traceframe");
+    let trace_path = dir.path().join("invalid.slod");
 
-    traceframe()
+    slod()
         .args([
             "hook",
             "ingest",
@@ -202,13 +202,13 @@ fn hook_install_print_emits_snippet_and_writes_nothing() {
     let dir = tempdir().unwrap();
     let hooks_file = dir.path().join(".agent").join("hooks.json");
 
-    traceframe()
+    slod()
         .current_dir(dir.path())
         .args(["hook", "install", "--print"])
         .assert()
         .success()
         .stdout(predicate::str::contains("hook install (print)"))
-        .stdout(predicate::str::contains("traceframe hook ingest"))
+        .stdout(predicate::str::contains("slod hook ingest"))
         .stdout(predicate::str::contains("PreToolUse"))
         .stdout(predicate::str::contains("PostToolUse"))
         .stdout(predicate::str::contains("--source generic"))
@@ -234,7 +234,7 @@ fn hook_install_writes_preserves_existing_entries_and_is_idempotent() {
     )
     .unwrap();
 
-    traceframe()
+    slod()
         .current_dir(dir.path())
         .args(["hook", "install"])
         .assert()
@@ -245,8 +245,8 @@ fn hook_install_writes_preserves_existing_entries_and_is_idempotent() {
     let after_first = fs::read_to_string(&hooks_file).unwrap();
     // Existing foreign entry preserved.
     assert!(after_first.contains("existing-tool"));
-    // Traceframe entries added under both events, nested under `hooks`.
-    assert!(after_first.contains("traceframe hook ingest"));
+    // Slod entries added under both events, nested under `hooks`.
+    assert!(after_first.contains("slod hook ingest"));
     assert!(after_first.contains("PostToolUse"));
     let parsed: serde_json::Value = serde_json::from_str(&after_first).unwrap();
     assert!(
@@ -255,8 +255,8 @@ fn hook_install_writes_preserves_existing_entries_and_is_idempotent() {
     );
     assert!(parsed["hooks"]["PostToolUse"].is_array());
 
-    // Second run must be idempotent: no duplicate traceframe entries.
-    traceframe()
+    // Second run must be idempotent: no duplicate slod entries.
+    slod()
         .current_dir(dir.path())
         .args(["hook", "install"])
         .assert()
@@ -265,9 +265,9 @@ fn hook_install_writes_preserves_existing_entries_and_is_idempotent() {
 
     let after_second = fs::read_to_string(&hooks_file).unwrap();
     assert_eq!(
-        after_second.matches("traceframe hook ingest").count(),
+        after_second.matches("slod hook ingest").count(),
         2,
-        "expected exactly one traceframe entry per event after re-running install"
+        "expected exactly one slod entry per event after re-running install"
     );
     assert!(after_second.contains("existing-tool"));
 }
@@ -277,7 +277,7 @@ fn hook_install_creates_hooks_file_when_missing() {
     let dir = tempdir().unwrap();
     let hooks_file = dir.path().join(".agent").join("hooks.json");
 
-    traceframe()
+    slod()
         .current_dir(dir.path())
         .args(["hook", "install", "--run-id", "demo-run"])
         .assert()
@@ -285,7 +285,7 @@ fn hook_install_creates_hooks_file_when_missing() {
 
     assert!(hooks_file.exists());
     let content = fs::read_to_string(&hooks_file).unwrap();
-    assert!(content.contains("traceframe hook ingest"));
+    assert!(content.contains("slod hook ingest"));
     assert!(content.contains("--run-id demo-run"));
     // The wiring must sit under the top-level `hooks` object a host discovers,
     // with the `Bash` matcher that captures shell tool calls.
@@ -299,7 +299,7 @@ fn hook_install_honors_custom_source_and_file() {
     let dir = tempdir().unwrap();
     let hooks_file = dir.path().join("hooks.json");
 
-    traceframe()
+    slod()
         .current_dir(dir.path())
         .args(["hook", "install", "--source", "my-harness", "--file"])
         .arg(&hooks_file)
@@ -313,10 +313,10 @@ fn hook_install_honors_custom_source_and_file() {
 #[test]
 fn hook_ingest_dir_derives_per_session_trace_without_run_id_or_init() {
     let dir = tempdir().unwrap();
-    let runs = dir.path().join(".traceframe").join("runs");
+    let runs = dir.path().join(".slod").join("runs");
 
     // No --run-id and no --init-if-missing: the wired-command shape.
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic", "--dir"])
         .arg(&runs)
         .write_stdin(
@@ -326,7 +326,7 @@ fn hook_ingest_dir_derives_per_session_trace_without_run_id_or_init() {
         .success()
         .stdout(predicate::str::contains("tool.call#1"));
 
-    let trace_path = runs.join("run-sess-A.traceframe");
+    let trace_path = runs.join("run-sess-A.slod");
     assert!(
         trace_path.exists(),
         "expected per-session trace to be created"
@@ -342,7 +342,7 @@ fn hook_ingest_dir_separates_sessions_and_appends_same_session() {
     let runs = dir.path().join("runs");
 
     let ingest = |payload: &str| {
-        traceframe()
+        slod()
             .args(["hook", "ingest", "--source", "generic", "--dir"])
             .arg(&runs)
             .write_stdin(payload.to_string())
@@ -358,13 +358,13 @@ fn hook_ingest_dir_separates_sessions_and_appends_same_session() {
         r#"{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"b"},"session_id":"sess-2"}"#,
     );
 
-    let trace_1 = runs.join("run-sess-1.traceframe");
-    let trace_2 = runs.join("run-sess-2.traceframe");
+    let trace_1 = runs.join("run-sess-1.slod");
+    let trace_2 = runs.join("run-sess-2.slod");
     assert!(trace_1.exists());
     assert!(trace_2.exists());
 
     // Same session again => appended to the same file (seq increments).
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic", "--dir"])
         .arg(&runs)
         .write_stdin(
@@ -375,7 +375,7 @@ fn hook_ingest_dir_separates_sessions_and_appends_same_session() {
         .stdout(predicate::str::contains("tool.result#2"));
 
     // sess-1 now has two events; the open trace must still verify.
-    traceframe()
+    slod()
         .args(["verify", "--allow-open", "--file"])
         .arg(&trace_1)
         .assert()
@@ -394,7 +394,7 @@ fn hook_ingest_dir_uses_deterministic_fallback_without_session_id() {
     let dir = tempdir().unwrap();
     let runs = dir.path().join("runs");
 
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic", "--dir"])
         .arg(&runs)
         .write_stdin(
@@ -404,7 +404,7 @@ fn hook_ingest_dir_uses_deterministic_fallback_without_session_id() {
         .success()
         .stdout(predicate::str::contains("tool.call#1"));
 
-    // Exactly one trace file was created, named run-<hash>.traceframe.
+    // Exactly one trace file was created, named run-<hash>.slod.
     let entries: Vec<_> = fs::read_dir(&runs)
         .unwrap()
         .map(|e| e.unwrap().file_name().to_string_lossy().to_string())
@@ -415,17 +415,17 @@ fn hook_ingest_dir_uses_deterministic_fallback_without_session_id() {
         "expected one fallback trace, got {entries:?}"
     );
     assert!(entries[0].starts_with("run-"));
-    assert!(entries[0].ends_with(".traceframe"));
+    assert!(entries[0].ends_with(".slod"));
 }
 
 #[test]
 fn hook_ingest_file_with_init_no_run_id_derives_instead_of_failing() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("session.traceframe");
+    let trace_path = dir.path().join("session.slod");
 
     // The old bug: --file --init-if-missing without --run-id failed. Now it
     // derives the run id from the payload and creates the trace.
-    traceframe()
+    slod()
         .args([
             "hook",
             "ingest",
@@ -452,7 +452,7 @@ fn hook_ingest_requires_exactly_one_of_file_or_dir() {
     let dir = tempdir().unwrap();
 
     // Neither --file nor --dir.
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic"])
         .current_dir(dir.path())
         .write_stdin(r#"{"hook_event_name":"PreToolUse","tool_name":"Bash"}"#)
@@ -465,7 +465,7 @@ fn hook_ingest_requires_exactly_one_of_file_or_dir() {
 
 /// End-to-end: take the EXACT command line that `hook install` wires into the
 /// generated hooks file, run it with a real payload on stdin, and prove it
-/// creates a valid per-session trace under `.traceframe/runs/`. This is the
+/// creates a valid per-session trace under `.slod/runs/`. This is the
 /// regression guard for the bug where the wired command itself failed at
 /// runtime.
 #[test]
@@ -474,7 +474,7 @@ fn wired_install_command_actually_runs_and_creates_a_trace() {
     let workspace = dir.path();
 
     // 1) Generate the real hooks file (non-print mode).
-    traceframe()
+    slod()
         .current_dir(workspace)
         .args(["hook", "install"])
         .assert()
@@ -489,18 +489,18 @@ fn wired_install_command_actually_runs_and_creates_a_trace() {
         .as_str()
         .expect("wired command present")
         .to_string();
-    assert!(command.contains("--dir .traceframe/runs"));
+    assert!(command.contains("--dir .slod/runs"));
     assert!(!command.contains("--init-if-missing"));
     assert!(!command.contains("--file"));
 
     // 3) Tokenize and run it as the host would, with the payload on stdin,
-    //    from the workspace dir. Replace the bare `traceframe` program with the
+    //    from the workspace dir. Replace the bare `slod` program with the
     //    test binary so we exercise the same code path the host would invoke.
     let mut tokens = command.split_whitespace();
-    assert_eq!(tokens.next(), Some("traceframe"));
+    assert_eq!(tokens.next(), Some("slod"));
     let args: Vec<&str> = tokens.collect();
 
-    traceframe()
+    slod()
         .current_dir(workspace)
         .args(&args)
         .write_stdin(
@@ -510,18 +510,18 @@ fn wired_install_command_actually_runs_and_creates_a_trace() {
         .success()
         .stdout(predicate::str::contains("tool.call#1"));
 
-    // 4) The trace exists under .traceframe/runs/ and verifies (open).
+    // 4) The trace exists under .slod/runs/ and verifies (open).
     let trace_path = workspace
-        .join(".traceframe")
+        .join(".slod")
         .join("runs")
-        .join("run-wired-session.traceframe");
+        .join("run-wired-session.slod");
     assert!(
         trace_path.exists(),
         "wired command did not create {}",
         trace_path.display()
     );
 
-    traceframe()
+    slod()
         .args(["verify", "--allow-open", "--file"])
         .arg(&trace_path)
         .assert()
@@ -538,10 +538,10 @@ fn wired_install_command_actually_runs_and_creates_a_trace() {
 #[test]
 fn hook_ingest_maps_pre_and_post_tool_use_payloads() {
     let dir = tempdir().unwrap();
-    let runs = dir.path().join(".traceframe").join("runs");
+    let runs = dir.path().join(".slod").join("runs");
 
     // PreToolUse as a host actually emits it for a shell command.
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic", "--dir"])
         .arg(&runs)
         .write_stdin(
@@ -552,7 +552,7 @@ fn hook_ingest_maps_pre_and_post_tool_use_payloads() {
         .stdout(predicate::str::contains("tool.call#1"));
 
     // PostToolUse for the same session: result nested under tool_response.
-    traceframe()
+    slod()
         .args(["hook", "ingest", "--source", "generic", "--dir"])
         .arg(&runs)
         .write_stdin(
@@ -563,7 +563,7 @@ fn hook_ingest_maps_pre_and_post_tool_use_payloads() {
         .stdout(predicate::str::contains("tool.result#2"));
 
     // Both events landed in one per-session trace and carry the real fields.
-    let trace_path = runs.join("run-00000000-0000-0000-0000-000000000000.traceframe");
+    let trace_path = runs.join("run-00000000-0000-0000-0000-000000000000.slod");
     assert!(
         trace_path.exists(),
         "expected per-session trace for the host session id"
@@ -578,7 +578,7 @@ fn hook_ingest_maps_pre_and_post_tool_use_payloads() {
     assert!(trace.contains("test result: ok. 12 passed"));
     assert!(trace.contains(r#""success":true"#));
 
-    traceframe()
+    slod()
         .args(["summary", "--file"])
         .arg(&trace_path)
         .assert()

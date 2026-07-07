@@ -4,21 +4,21 @@ set -eu
 repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$repo_root"
 
-traceframe_bin="${TRACEFRAME_BIN:-$repo_root/target/debug/traceframe}"
-if [ ! -x "$traceframe_bin" ]; then
+slod_bin="${SLOD_BIN:-$repo_root/target/debug/slod}"
+if [ ! -x "$slod_bin" ]; then
   cargo build >/dev/null
 fi
 
-tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/traceframe-host-smoke.XXXXXX")"
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/slod-host-smoke.XXXXXX")"
 trap 'rm -rf "$tmp_dir"' EXIT
 
-runs_dir="$tmp_dir/.traceframe/runs"
-reports_dir="$tmp_dir/.traceframe/reports"
-ledger_file="$tmp_dir/.traceframe/ledger.traceframe"
+runs_dir="$tmp_dir/.slod/runs"
+reports_dir="$tmp_dir/.slod/reports"
+ledger_file="$tmp_dir/.slod/ledger.slod"
 mkdir -p "$runs_dir" "$reports_dir"
 
 run_tf() {
-  "$traceframe_bin" "$@"
+  "$slod_bin" "$@"
 }
 
 assert_contains() {
@@ -32,16 +32,16 @@ assert_contains() {
   fi
 }
 
-success_trace="$runs_dir/smoke-success.traceframe"
-failed_trace="$runs_dir/smoke-failed.traceframe"
-manual_trace="$runs_dir/smoke-manual.traceframe"
-open_trace="$runs_dir/smoke-open.traceframe"
+success_trace="$runs_dir/smoke-success.slod"
+failed_trace="$runs_dir/smoke-failed.slod"
+manual_trace="$runs_dir/smoke-manual.slod"
+open_trace="$runs_dir/smoke-open.slod"
 
 run_tf run --file "$success_trace" --run-id smoke-success --force -- cargo --version \
   >"$tmp_dir/success.out" 2>"$tmp_dir/success.err"
 assert_contains "$tmp_dir/success.out" "cargo"
-assert_contains "$tmp_dir/success.out" "traceframe finish"
-assert_contains "$tmp_dir/success.err" "traceframe exec"
+assert_contains "$tmp_dir/success.out" "slod finish"
+assert_contains "$tmp_dir/success.err" "slod exec"
 run_tf verify --file "$success_trace" >"$tmp_dir/success.verify"
 assert_contains "$tmp_dir/success.verify" "valid trace"
 
@@ -54,7 +54,7 @@ if [ "$failed_code" -ne 7 ]; then
   echo "expected failed command exit code 7, got $failed_code" >&2
   exit 1
 fi
-assert_contains "$tmp_dir/failed.out" "traceframe finish"
+assert_contains "$tmp_dir/failed.out" "slod finish"
 assert_contains "$tmp_dir/failed.err" "expected failure"
 run_tf summary --file "$failed_trace" >"$tmp_dir/failed.summary"
 assert_contains "$tmp_dir/failed.summary" "status: failed"
@@ -71,7 +71,7 @@ assert_contains "$tmp_dir/manual.inspect" "permission.decision"
 assert_contains "$tmp_dir/manual.inspect" "denied by policy"
 run_tf render --file "$manual_trace" --html "$reports_dir/manual.html" >/dev/null
 test -s "$reports_dir/manual.html"
-assert_contains "$reports_dir/manual.html" "traceframe report"
+assert_contains "$reports_dir/manual.html" "slod report"
 
 run_tf init --file "$open_trace" --run-id smoke-open --force >/dev/null
 run_tf record --file "$open_trace" --kind tool.call --payload '{"tool":"shell","command":"long-running task"}' >/dev/null
@@ -103,6 +103,6 @@ assert_contains "$tmp_dir/ledger.show" "permission_decisions: 1"
     >"$tmp_dir/example.out"
 )
 assert_contains "$tmp_dir/example.out" "run_id: example-harness"
-run_tf verify --file "$tmp_dir/.traceframe/runs/example-harness.traceframe" >/dev/null
+run_tf verify --file "$tmp_dir/.slod/runs/example-harness.slod" >/dev/null
 
-echo "traceframe host smoke: ok"
+echo "slod host smoke: ok"

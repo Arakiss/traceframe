@@ -201,7 +201,7 @@ fn trace_files(dir: &Path) -> Result<Vec<PathBuf>> {
     {
         let entry = entry.with_context(|| format!("failed to read entry in {}", dir.display()))?;
         let path = entry.path();
-        if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("traceframe") {
+        if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("slod") {
             files.push(path);
         }
     }
@@ -226,14 +226,14 @@ mod tests {
     use serde_json::json;
     use tempfile::tempdir;
 
-    use crate::trace::{Event, TRACEFRAME_VERSION};
+    use crate::trace::{Event, SLOD_VERSION};
 
     use super::*;
 
     fn trace(status: Option<&str>) -> Trace {
         let mut events = vec![
             Event {
-                version: TRACEFRAME_VERSION,
+                version: SLOD_VERSION,
                 run_id: "run-ledger".into(),
                 event_id: "e0".into(),
                 kind: EventKind::RunStarted,
@@ -242,7 +242,7 @@ mod tests {
                 payload: json!({"status":"started"}),
             },
             Event {
-                version: TRACEFRAME_VERSION,
+                version: SLOD_VERSION,
                 run_id: "run-ledger".into(),
                 event_id: "e1".into(),
                 kind: EventKind::ToolCall,
@@ -251,7 +251,7 @@ mod tests {
                 payload: json!({"tool":"shell"}),
             },
             Event {
-                version: TRACEFRAME_VERSION,
+                version: SLOD_VERSION,
                 run_id: "run-ledger".into(),
                 event_id: "e2".into(),
                 kind: EventKind::PermissionDecision,
@@ -263,7 +263,7 @@ mod tests {
 
         if let Some(status) = status {
             events.push(Event {
-                version: TRACEFRAME_VERSION,
+                version: SLOD_VERSION,
                 run_id: "run-ledger".into(),
                 event_id: "e3".into(),
                 kind: EventKind::RunFinished,
@@ -279,8 +279,7 @@ mod tests {
     #[test]
     fn entry_summarizes_closed_trace() {
         let entry =
-            LedgerEntry::from_trace(Path::new("runs/run.traceframe"), &trace(Some("success")))
-                .unwrap();
+            LedgerEntry::from_trace(Path::new("runs/run.slod"), &trace(Some("success"))).unwrap();
 
         assert_eq!(entry.run_id, "run-ledger");
         assert_eq!(entry.status, "success");
@@ -294,8 +293,7 @@ mod tests {
 
     #[test]
     fn entry_summarizes_open_trace() {
-        let entry =
-            LedgerEntry::from_trace(Path::new("runs/open.traceframe"), &trace(None)).unwrap();
+        let entry = LedgerEntry::from_trace(Path::new("runs/open.slod"), &trace(None)).unwrap();
 
         assert_eq!(entry.status, "open");
         assert_eq!(entry.finished_ms, None);
@@ -306,18 +304,18 @@ mod tests {
         let dir = tempdir().unwrap();
         let runs_dir = dir.path().join("runs");
         fs::create_dir(&runs_dir).unwrap();
-        let out = dir.path().join("ledger.traceframe");
+        let out = dir.path().join("ledger.slod");
 
-        Trace::init(&runs_dir.join("b.traceframe"), "run-b", false).unwrap();
+        Trace::init(&runs_dir.join("b.slod"), "run-b", false).unwrap();
         Trace::append(
-            &runs_dir.join("b.traceframe"),
+            &runs_dir.join("b.slod"),
             EventKind::RunFinished,
             json!({"status":"failed"}),
         )
         .unwrap();
-        Trace::init(&runs_dir.join("a.traceframe"), "run-a", false).unwrap();
+        Trace::init(&runs_dir.join("a.slod"), "run-a", false).unwrap();
         Trace::append(
-            &runs_dir.join("a.traceframe"),
+            &runs_dir.join("a.slod"),
             EventKind::RunFinished,
             json!({"status":"success"}),
         )
@@ -336,7 +334,7 @@ mod tests {
             LedgerEntry {
                 version: LEDGER_VERSION,
                 run_id: "run-a".into(),
-                trace_path: "a.traceframe".into(),
+                trace_path: "a.slod".into(),
                 status: "success".into(),
                 event_count: 1,
                 model_calls: 0,
@@ -351,7 +349,7 @@ mod tests {
             LedgerEntry {
                 version: LEDGER_VERSION,
                 run_id: "run-b".into(),
-                trace_path: "b.traceframe".into(),
+                trace_path: "b.slod".into(),
                 status: "failed".into(),
                 event_count: 1,
                 model_calls: 0,
@@ -376,7 +374,7 @@ mod tests {
     #[test]
     fn read_rejects_malformed_ledger_line() {
         let dir = tempdir().unwrap();
-        let path = dir.path().join("ledger.traceframe");
+        let path = dir.path().join("ledger.slod");
         fs::write(&path, "{bad}\n").unwrap();
 
         let error = read(&path).unwrap_err();

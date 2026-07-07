@@ -34,27 +34,27 @@ fn import_maps_a_claude_code_transcript_to_a_closed_verified_trace() {
     fs::write(&input, TRANSCRIPT).unwrap();
     let runs = dir.path().join("runs");
 
-    traceframe()
+    slod()
         .args(["import", "--format", "claude-code", "--input"])
         .arg(&input)
         .arg("--dir")
         .arg(&runs)
         .assert()
         .success()
-        .stdout(predicate::str::contains("traceframe import"))
+        .stdout(predicate::str::contains("slod import"))
         .stdout(predicate::str::contains("run-abc123"))
         .stdout(predicate::str::contains("tool_failures 1"));
 
-    let trace_path = runs.join("run-abc123.traceframe");
+    let trace_path = runs.join("run-abc123.slod");
     assert!(trace_path.exists(), "derived per-run trace file exists");
 
-    traceframe()
+    slod()
         .args(["verify", "--file"])
         .arg(&trace_path)
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["summary", "--file"])
         .arg(&trace_path)
         .assert()
@@ -86,9 +86,9 @@ fn import_refuses_existing_target_unless_forced() {
     let dir = tempdir().unwrap();
     let input = dir.path().join("session.jsonl");
     fs::write(&input, TRANSCRIPT).unwrap();
-    let target = dir.path().join("imported.traceframe");
+    let target = dir.path().join("imported.slod");
 
-    traceframe()
+    slod()
         .args(["import", "--format", "claude-code", "--input"])
         .arg(&input)
         .arg("--file")
@@ -96,7 +96,7 @@ fn import_refuses_existing_target_unless_forced() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["import", "--format", "claude-code", "--input"])
         .arg(&input)
         .arg("--file")
@@ -105,7 +105,7 @@ fn import_refuses_existing_target_unless_forced() {
         .failure()
         .stderr(predicate::str::contains("already exists"));
 
-    traceframe()
+    slod()
         .args(["import", "--format", "claude-code", "--force", "--input"])
         .arg(&input)
         .arg("--file")
@@ -120,7 +120,7 @@ fn import_rejects_unknown_formats_and_empty_inputs() {
     let input = dir.path().join("session.jsonl");
     fs::write(&input, TRANSCRIPT).unwrap();
 
-    traceframe()
+    slod()
         .args(["import", "--format", "martian", "--input"])
         .arg(&input)
         .assert()
@@ -129,7 +129,7 @@ fn import_rejects_unknown_formats_and_empty_inputs() {
 
     let empty = dir.path().join("empty.jsonl");
     fs::write(&empty, "").unwrap();
-    traceframe()
+    slod()
         .args(["import", "--format", "claude-code", "--input"])
         .arg(&empty)
         .arg("--dir")

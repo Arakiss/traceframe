@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use uuid::Uuid;
 
-use crate::trace::{Event, EventKind, TRACEFRAME_VERSION};
+use crate::trace::{Event, EventKind, SLOD_VERSION};
 
 /// Maximum characters kept per string when embedding tool inputs or error
 /// previews in payloads. Transcript inputs can carry entire file bodies;
@@ -214,7 +214,7 @@ pub fn parse_claude_code(input: &Path, run_id: Option<&str>, source: &str) -> Re
         0,
         started_ts,
         json!({
-            "created_by": "traceframe-import",
+            "created_by": "slod-import",
             "status": "started",
             "format": "claude-code",
             "source": source,
@@ -285,7 +285,7 @@ pub fn write_trace(target: &Path, events: &[Event], force: bool) -> Result<()> {
 
 fn build_event(run_id: &str, kind: EventKind, seq: u64, ts_ms: i128, payload: Value) -> Event {
     Event {
-        version: TRACEFRAME_VERSION,
+        version: SLOD_VERSION,
         run_id: run_id.to_string(),
         event_id: Uuid::new_v4().to_string(),
         kind,

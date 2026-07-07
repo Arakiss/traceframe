@@ -1,6 +1,6 @@
 # Agent hook ingestion
 
-Traceframe can ingest host hook payloads from stdin and turn them into local
+Slod can ingest host hook payloads from stdin and turn them into local
 trace events. This is the first integration surface for any agent harness that
 emits lifecycle hook payloads, where tools, permission decisions, and failures
 happen outside a single wrapped shell command.
@@ -8,15 +8,15 @@ happen outside a single wrapped shell command.
 The command a wired host hook runs is:
 
 ```bash
-traceframe hook ingest \
+slod hook ingest \
   --source generic \
-  --dir .traceframe/runs
+  --dir .slod/runs
 ```
 
-The hook JSON payload is read from stdin. With `--dir`, traceframe derives a
+The hook JSON payload is read from stdin. With `--dir`, slod derives a
 per-session run id from the payload (`run-<session_id>`, or a deterministic
 fallback when the host sends no session id), writes to
-`<dir>/<run_id>.traceframe`, and creates that trace on first use. The wired
+`<dir>/<run_id>.slod`, and creates that trace on first use. The wired
 command therefore never has to know the run id up front, and every event from
 the same host session lands in the same trace while different sessions stay in
 separate files.
@@ -24,9 +24,9 @@ separate files.
 You can still target one explicit file instead of a per-session directory:
 
 ```bash
-traceframe hook ingest \
+slod hook ingest \
   --source generic \
-  --file "$TRACEFRAME_FILE" \
+  --file "$SLOD_FILE" \
   --init-if-missing
 ```
 
@@ -36,7 +36,7 @@ payload otherwise. Pass exactly one of `--file` or `--dir`.
 
 ## The source label
 
-`--source` is a free-form label the host chooses. Traceframe stores it verbatim
+`--source` is a free-form label the host chooses. Slod stores it verbatim
 on every mapped event and never special-cases any harness name, so it stays
 agnostic to the tool that produced the hook. The label defaults to `generic`
 (an empty or whitespace-only value falls back to `generic`). Use it to tag
@@ -50,7 +50,7 @@ public v0.1 contract.
 
 ## Event mapping
 
-| Host payload shape | Traceframe event |
+| Host payload shape | Slod event |
 | --- | --- |
 | `PreToolUse`, `tool_input`, or `tool_name` | `tool.call` |
 | `PostToolUse`, `tool_response`, `success`, or `exit_code` | `tool.result` |
@@ -69,10 +69,10 @@ depend on the host, but the pattern is stable:
 #!/usr/bin/env sh
 set -eu
 
-runs_dir="${TRACEFRAME_DIR:-.traceframe/runs}"
-source="${TRACEFRAME_SOURCE:-generic}"
+runs_dir="${SLOD_DIR:-.slod/runs}"
+source="${SLOD_SOURCE:-generic}"
 
-traceframe hook ingest \
+slod hook ingest \
   --source "$source" \
   --dir "$runs_dir"
 ```
@@ -80,7 +80,7 @@ traceframe hook ingest \
 The host should pipe its hook JSON payload into the script:
 
 ```bash
-printf '%s' "$HOOK_PAYLOAD_JSON" | ./traceframe-hook.sh
+printf '%s' "$HOOK_PAYLOAD_JSON" | ./slod-hook.sh
 ```
 
 ## Example payloads
@@ -89,7 +89,7 @@ These mirror the shape many agent harnesses send a hook on stdin for a shell
 command: `tool_name` is the canonical `"Bash"`, the command is under
 `tool_input.command`, and the result is under `tool_response`
 (`output` + `exit_code`), alongside host-specific
-`turn_id`/`tool_use_id`/`permission_mode` fields. Traceframe only reads the
+`turn_id`/`tool_use_id`/`permission_mode` fields. Slod only reads the
 fields it recognizes and ignores the rest.
 
 Tool call (`PreToolUse`):
@@ -149,11 +149,11 @@ Permission decision:
 
 ## Installing the wiring
 
-`traceframe hook install` writes the host wiring so a harness pipes its hook
+`slod hook install` writes the host wiring so a harness pipes its hook
 payloads into `hook ingest`. It is idempotent and opt-in.
 
 ```bash
-traceframe hook install
+slod hook install
 ```
 
 - `--file <path>` is the local hooks file to merge into (default
@@ -163,7 +163,7 @@ traceframe hook install
 - `--print` prints the planned wiring without writing anything.
 - `--run-id <id>` pins a run id into the generated ingest commands.
 
-Install merges traceframe `PreToolUse` and `PostToolUse` entries into the local
+Install merges slod `PreToolUse` and `PostToolUse` entries into the local
 hooks file. The entries are nested under the top-level `hooks` object a host
 discovers, and each uses `"matcher": "Bash"`. Most agent harnesses surface
 every shell command they run to hooks as the canonical tool name `"Bash"`, and
@@ -177,7 +177,7 @@ shell tool calls. The generated file looks like:
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "traceframe hook ingest --source generic --dir .traceframe/runs" }
+          { "type": "command", "command": "slod hook ingest --source generic --dir .slod/runs" }
         ]
       }
     ],
@@ -185,7 +185,7 @@ shell tool calls. The generated file looks like:
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "traceframe hook ingest --source generic --dir .traceframe/runs" }
+          { "type": "command", "command": "slod hook ingest --source generic --dir .slod/runs" }
         ]
       }
     ]
@@ -193,10 +193,10 @@ shell tool calls. The generated file looks like:
 }
 ```
 
-The wired command is `traceframe hook ingest --source generic --dir
-.traceframe/runs`, so each host session gets its own per-session trace with no
+The wired command is `slod hook ingest --source generic --dir
+.slod/runs`, so each host session gets its own per-session trace with no
 `--run-id` or `--init-if-missing` to manage. Install preserves existing entries
-(including unrelated config under `hooks`) and never duplicates a traceframe
+(including unrelated config under `hooks`) and never duplicates a slod
 entry, so re-running is safe. It only ever touches the local file you point it
 at, never a global one.
 
@@ -204,22 +204,22 @@ at, never a global one.
 
 Whether a hook fires depends on the host. Some harnesses run `PreToolUse` and
 `PostToolUse` hooks only during interactive sessions and skip them in a
-non-interactive batch mode; others run them in both. Traceframe writes the
+non-interactive batch mode; others run them in both. Slod writes the
 standard hook wiring and ingests whatever the host actually sends. When a host
-does not run hooks in a given mode, capture traces with the `traceframe run`
+does not run hooks in a given mode, capture traces with the `slod run`
 wrapper or by piping host payloads into `hook ingest` directly instead.
 
 When a host's settings file is global or otherwise delicate, prefer
-`hook install --print` and paste the printed snippet by hand. Traceframe never
+`hook install --print` and paste the printed snippet by hand. Slod never
 writes a file in `--print` mode.
 
 ## Auditing a trace against policy
 
-`traceframe policy-check` audits a recorded trace and exits non-zero when it
+`slod policy-check` audits a recorded trace and exits non-zero when it
 finds a violation:
 
 ```bash
-traceframe policy-check --file .traceframe/runs/session.traceframe
+slod policy-check --file .slod/runs/session.slod
 ```
 
 - `--file <path>` is the trace to audit (required).

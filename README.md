@@ -1,28 +1,34 @@
 <p align="center">
-  <img src="assets/banner.svg?v=20260503-pipeline" alt="traceframe - inspectable traces for AI agent workflows" width="100%" />
+  <img src="assets/banner.svg?v=20260503-pipeline" alt="slod - inspectable traces for AI agent workflows" width="100%" />
 </p>
 <p align="center"><sub><em>The frame is the harness. The trace is what lets the next agent understand the run.</em></sub></p>
 
 <p align="center">
-  <a href="https://github.com/Arakiss/traceframe/actions/workflows/ci.yml"><img src="https://github.com/Arakiss/traceframe/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Arakiss/slod/actions/workflows/ci.yml"><img src="https://github.com/Arakiss/slod/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="Cargo.toml"><img src="https://img.shields.io/badge/rust-1.94%2B-orange.svg" alt="Rust 1.94+"></a>
-  <a href="examples/agent-run.traceframe"><img src="https://img.shields.io/badge/trace-local%20file-blue.svg" alt="Trace local file"></a>
+  <a href="examples/agent-run.slod"><img src="https://img.shields.io/badge/trace-local%20file-blue.svg" alt="Trace local file"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/status-local%20MVP-blue.svg" alt="Status: local MVP"></a>
 </p>
 
-# traceframe
+# slod
+
+> _slod_ — Old Norse *slóð*: the trail something leaves as it moves. An agent
+> run leaves a slóð; this tool makes it append-only, verifiable, and
+> inspectable. Renamed from `traceframe` on 2026-07-07 (old GitHub URLs
+> redirect); the name is host-neutral by design — Claude Code, Codex, Cursor,
+> or any future harness leave the same kind of trail.
 
 > _Agents do not need more autonomy before they have inspectable traces._
 
 **A local-first Rust library and CLI for AI agent workflow traces.**
 
-> **Development status: local MVP.** Traceframe is public, installable from source, and verified by CI, but the trace schema and CLI are still intentionally narrow. Expect breaking schema/CLI changes while the project is tested against real agent workflows. Use it first for local harness inspection, examples, and failure analysis.
+> **Development status: local MVP.** Slod is public, installable from source, and verified by CI, but the trace schema and CLI are still intentionally narrow. Expect breaking schema/CLI changes while the project is tested against real agent workflows. Use it first for local harness inspection, examples, and failure analysis.
 
 > Direction lives in [ROADMAP.md](ROADMAP.md). Agents (and humans) working on
 > this repo start at [AGENTS.md](AGENTS.md).
 
-Traceframe records what an AI agent actually did: model calls, tool calls,
+Slod records what an AI agent actually did: model calls, tool calls,
 permission decisions, command results, errors, final state, and the order in
 which those things happened. It is a small Rust crate and CLI for local harness
 engineering, not a SaaS dashboard.
@@ -42,7 +48,7 @@ A serious agent harness has multiple layers:
 5. **Export surfaces**: OpenTelemetry, dashboards, issue reports, PR comments,
    or HTML summaries.
 
-Traceframe owns layer 3. It does not try to own the whole stack.
+Slod owns layer 3. It does not try to own the whole stack.
 
 A policy layer answers:
 
@@ -50,7 +56,7 @@ A policy layer answers:
 What is this agent allowed to do?
 ```
 
-Traceframe answers:
+Slod answers:
 
 ```text
 What did this agent actually do, and why did it fail?
@@ -64,10 +70,10 @@ the full episode around it.
 
 The fix is a durable artifact: an agent should leave evidence that another agent
 or a human can inspect after the run — not a transcript, not a shell log, but an
-ordered record of what happened. Traceframe is deliberately narrow: it records
+ordered record of what happened. Slod is deliberately narrow: it records
 the run, and nothing more.
 
-Traceframe takes a narrow stance:
+Slod takes a narrow stance:
 
 - **Local-first.** A trace is a file you can inspect, diff, archive, attach to
   an issue, or hand to another agent.
@@ -91,24 +97,24 @@ cargo install --path .
 ## Quick start
 
 ```bash
-traceframe run --file run.traceframe --run-id run-demo -- cargo test
-traceframe summary --file run.traceframe
-traceframe inspect --file run.traceframe
-traceframe render --file run.traceframe --html traceframe.html
+slod run --file run.slod --run-id run-demo -- cargo test
+slod summary --file run.slod
+slod inspect --file run.slod
+slod render --file run.slod --html slod.html
 ```
 
 For longer workflows, keep a trace open and append events as the harness runs:
 
 ```bash
-traceframe init --file workflow.traceframe --run-id run-demo
-traceframe record --file workflow.traceframe --kind model.call --payload '{"provider":"openai","model":"gpt"}'
-traceframe record --file workflow.traceframe --kind permission.decision --payload '{"capability":"fs.write:README.md","decision":"allow"}'
-traceframe exec --file workflow.traceframe -- cargo test
-traceframe finish --file workflow.traceframe --status success
-traceframe verify --file workflow.traceframe
-traceframe summary --file workflow.traceframe
-traceframe inspect --file workflow.traceframe
-traceframe render --file workflow.traceframe --html traceframe.html
+slod init --file workflow.slod --run-id run-demo
+slod record --file workflow.slod --kind model.call --payload '{"provider":"openai","model":"gpt"}'
+slod record --file workflow.slod --kind permission.decision --payload '{"capability":"fs.write:README.md","decision":"allow"}'
+slod exec --file workflow.slod -- cargo test
+slod finish --file workflow.slod --status success
+slod verify --file workflow.slod
+slod summary --file workflow.slod
+slod inspect --file workflow.slod
+slod render --file workflow.slod --html slod.html
 ```
 
 `record` remains available for raw structured events. For day-to-day harness
@@ -122,68 +128,68 @@ Backfill traces from transcripts your harness already wrote (see
 [docs/import.md](docs/import.md)):
 
 ```bash
-traceframe import --format claude-code --input session.jsonl
-traceframe ledger rebuild
+slod import --format claude-code --input session.jsonl
+slod ledger rebuild
 ```
 
-Once runs accumulate under `.traceframe/runs/`, rebuild the local ledger. Omit
+Once runs accumulate under `.slod/runs/`, rebuild the local ledger. Omit
 `--file` when you want `run` to use the default local run directory:
 
 ```bash
-traceframe run --run-id run-demo -- cargo test
-traceframe ledger rebuild
-traceframe ledger list
-traceframe ledger list --status failed
-traceframe ledger show --run-id run-demo
+slod run --run-id run-demo -- cargo test
+slod ledger rebuild
+slod ledger list
+slod ledger list --status failed
+slod ledger show --run-id run-demo
 ```
 
 The ledger is a derived catalog, not a database and not a second source of
 truth. If it is stale or deleted, rebuild it from the trace files.
 
 For host hooks, ingest the JSON payload from stdin instead of wrapping each
-command manually. Use `--dir` for per-session traces: traceframe derives the
-run id from the payload's session, writes `<dir>/<run_id>.traceframe`, and
+command manually. Use `--dir` for per-session traces: slod derives the
+run id from the payload's session, writes `<dir>/<run_id>.slod`, and
 creates it on first use, so the wired command needs no `--run-id` or
 `--init-if-missing`:
 
 ```bash
-traceframe hook ingest \
+slod hook ingest \
   --source generic \
-  --dir .traceframe/runs <<'JSON'
+  --dir .slod/runs <<'JSON'
 {"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"cargo test"},"session_id":"host-session"}
 JSON
 ```
 
 `--source` is a free-form label the host chooses (default `generic`);
-traceframe stores it verbatim and never names a specific harness.
+slod stores it verbatim and never names a specific harness.
 
 To target one explicit trace file instead, pass `--file` (with
 `--init-if-missing` for the first event). Pass exactly one of `--file` or
 `--dir`.
 
 To wire a host so it pipes hook payloads into `hook ingest`, use the idempotent
-installer. It merges traceframe entries into a local hooks file (default
+installer. It merges slod entries into a local hooks file (default
 `.agent/hooks.json`), or prints a snippet to paste by hand when the host's
 settings file is global or delicate:
 
 ```bash
-traceframe hook install
-traceframe hook install --print
+slod hook install
+slod hook install --print
 ```
 
-The wired command is `traceframe hook ingest --source generic --dir .traceframe/runs`:
+The wired command is `slod hook ingest --source generic --dir .slod/runs`:
 it derives the run id from the host session id and writes one
-`<run-id>.traceframe` per session. To capture a real agent session end to end
+`<run-id>.slod` per session. To capture a real agent session end to end
 (wire → run a real agent → verify → render), run
 [`scripts/capture-session.sh`](scripts/capture-session.sh) (set `AGENT_CMD` to
-launch your harness, or let it fall back to a `traceframe run` recording);
-[`examples/agent-session.traceframe`](examples/agent-session.traceframe) is a
+launch your harness, or let it fall back to a `slod run` recording);
+[`examples/agent-session.slod`](examples/agent-session.slod) is a
 real (sanitized) capture of one such session.
 
 Once a run is recorded, audit it against capability/permission policy:
 
 ```bash
-traceframe policy-check --file .traceframe/runs/agent-run-demo.traceframe
+slod policy-check --file .slod/runs/agent-run-demo.slod
 ```
 
 `policy-check` fails when a permission deny is never resolved by a later allow,
@@ -212,7 +218,7 @@ errors: 1
 duration_ms: 110
 ```
 
-See [`examples/agent-run.traceframe`](examples/agent-run.traceframe)
+See [`examples/agent-run.slod`](examples/agent-run.slod)
 for a sample run with an allowed permission, a denied permission, a failed tool
 result, and a final failed state.
 
@@ -221,10 +227,10 @@ result, and a final failed state.
 Rust harnesses can write traces directly with `TraceRecorder`:
 
 ```rust
-use traceframe::trace::TraceRecorder;
+use slod::trace::TraceRecorder;
 
 let recorder = TraceRecorder::start(
-    ".traceframe/runs/my-agent-run.traceframe",
+    ".slod/runs/my-agent-run.slod",
     "my-agent-run",
     true,
 )?;
@@ -267,7 +273,7 @@ Supported event kinds:
 
 ## CLI experience
 
-Traceframe's CLI is designed for both humans and agents:
+Slod's CLI is designed for both humans and agents:
 
 - commands print stable, aligned summaries;
 - `run` creates, records, and closes a command trace in one step;
@@ -313,7 +319,7 @@ agent workflows.
 
 ## Storage model
 
-Traceframe stores traces as local append-only files. The trace file is the
+Slod stores traces as local append-only files. The trace file is the
 source of truth. The current implementation uses line-delimited JSON because it
 is simple to append, inspect, diff, and recover from. A database may be added
 later as a derived local index, but not as the primary record of what the agent
@@ -321,7 +327,7 @@ did.
 
 The run ledger is the first derived storage layer. It catalogs local trace files
 for discovery, filtering, and handoff, but it is intentionally rebuildable from
-`.traceframe/runs/*.traceframe`.
+`.slod/runs/*.slod`.
 
 See [`docs/storage.md`](docs/storage.md) for the storage decision record and
 tradeoffs.
@@ -329,20 +335,20 @@ tradeoffs.
 ## Agent Skill
 
 This repo ships an agent-facing skill at
-[`skills/traceframe`](skills/traceframe). Install or copy it into your agent
-harness's skill directory when agents should know the correct Traceframe
+[`skills/slod`](skills/slod). Install or copy it into your agent
+harness's skill directory when agents should know the correct Slod
 operating contract, commands, and release gate.
 
 ## Product boundaries
 
-Traceframe deliberately starts with one contract: capture a local, ordered,
+Slod deliberately starts with one contract: capture a local, ordered,
 inspectable record of an agent run. Runtime control, permission policy,
 dashboards, OpenTelemetry export, eval suites, and prompt management can connect
 around that trace contract, but they should not define v0.1.
 
 ## Versioning and changelog
 
-Traceframe is pre-1.0. While the project is in local-MVP/alpha territory,
+Slod is pre-1.0. While the project is in local-MVP/alpha territory,
 breaking changes to the event schema, CLI flags, or output contracts may happen
 without a major version bump. The short-term goal is not feature breadth; it is
 to prove that the local trace contract is useful inside real agent workflows.

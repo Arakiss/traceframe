@@ -1,6 +1,6 @@
 # Release Signing and Provenance
 
-Every tagged Traceframe release ships signed, attested binaries plus a software
+Every tagged Slod release ships signed, attested binaries plus a software
 bill of materials (SBOM). This document explains how they are produced and how
 to verify a binary you downloaded.
 
@@ -8,13 +8,13 @@ to verify a binary you downloaded.
 
 For each platform (`x86_64`/`aarch64` × Linux/macOS) a release attaches:
 
-- `traceframe-<platform>.tar.gz` — the release binary.
-- `traceframe-<platform>.tar.gz.sha256` — its SHA-256 checksum.
-- `traceframe-<platform>.tar.gz.sigstore.json` — the Sigstore signing bundle.
+- `slod-<platform>.tar.gz` — the release binary.
+- `slod-<platform>.tar.gz.sha256` — its SHA-256 checksum.
+- `slod-<platform>.tar.gz.sigstore.json` — the Sigstore signing bundle.
 
 The release also attaches one SBOM for the whole source tree:
 
-- `traceframe-<tag>.cdx.json` — a CycloneDX SBOM.
+- `slod-<tag>.cdx.json` — a CycloneDX SBOM.
 
 ## How signing works
 
@@ -26,7 +26,7 @@ Rekor transparency log. The signing identity is bound to the release workflow at
 the release tag:
 
 ```
-https://github.com/Arakiss/traceframe/.github/workflows/release.yml@refs/tags/<tag>
+https://github.com/Arakiss/slod/.github/workflows/release.yml@refs/tags/<tag>
 ```
 
 The workflow aborts if its run identity is not the tag ref, so a signature can
@@ -44,12 +44,12 @@ you downloaded (for example `x86_64-linux` and `v0.2.0`).
 
 ```bash
 # 1) Checksum.
-shasum -a 256 -c traceframe-<platform>.tar.gz.sha256
+shasum -a 256 -c slod-<platform>.tar.gz.sha256
 
 # 2) Signature — identity is pinned to the release workflow at the tag.
-cosign verify-blob traceframe-<platform>.tar.gz \
-  --bundle traceframe-<platform>.tar.gz.sigstore.json \
-  --certificate-identity "https://github.com/Arakiss/traceframe/.github/workflows/release.yml@refs/tags/<tag>" \
+cosign verify-blob slod-<platform>.tar.gz \
+  --bundle slod-<platform>.tar.gz.sigstore.json \
+  --certificate-identity "https://github.com/Arakiss/slod/.github/workflows/release.yml@refs/tags/<tag>" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 ```
 
@@ -59,7 +59,7 @@ binary.
 You can also verify the GitHub attestation with the `gh` CLI:
 
 ```bash
-gh attestation verify traceframe-<platform>.tar.gz --repo Arakiss/traceframe
+gh attestation verify slod-<platform>.tar.gz --repo Arakiss/slod
 ```
 
 ## Inspecting the SBOM
@@ -69,7 +69,7 @@ tool that reads CycloneDX JSON works; for example:
 
 ```bash
 # List components with cyclonedx-cli, jq, or your SCA tool of choice.
-jq '.components[].name' traceframe-<tag>.cdx.json
+jq '.components[].name' slod-<tag>.cdx.json
 ```
 
 The SBOM also carries its own attestation, verifiable the same way as the

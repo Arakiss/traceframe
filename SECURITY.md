@@ -1,11 +1,11 @@
 # Security Policy
 
-Traceframe records local evidence about AI agent runs. It is not a sandbox,
+Slod records local evidence about AI agent runs. It is not a sandbox,
 permission gateway, or secret manager.
 
 ## Supported Versions
 
-Traceframe is pre-1.0. Security fixes target the current `main` branch until a
+Slod is pre-1.0. Security fixes target the current `main` branch until a
 published release channel exists.
 
 ## In Scope
@@ -22,8 +22,8 @@ Please report privately if you find:
 
 ## Out of Scope
 
-- Traceframe allowing a command to run when the user explicitly invoked
-  `traceframe exec` or `traceframe run`.
+- Slod allowing a command to run when the user explicitly invoked
+  `slod exec` or `slod run`.
 - Missing sandboxing or permission enforcement. That belongs in the runtime,
   host agent, OS confinement, or a policy layer.
 - Secrets already present in a trace payload supplied by the caller.
@@ -32,10 +32,10 @@ Please report privately if you find:
 
 Use GitHub's private security advisory flow when available:
 
-<https://github.com/Arakiss/traceframe/security/advisories/new>
+<https://github.com/Arakiss/slod/security/advisories/new>
 
 If that is unavailable, email `petruarakiss@gmail.com` with the subject prefix
-`[traceframe-security]`.
+`[slod-security]`.
 
 Include:
 

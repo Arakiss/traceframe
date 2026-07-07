@@ -1,5 +1,5 @@
 name: Bug report
-description: Report incorrect Traceframe behavior.
+description: Report incorrect Slod behavior.
 title: "bug: "
 labels: ["bug", "triage"]
 body:
@@ -11,8 +11,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Traceframe version
-      description: Output of `traceframe --version` or commit hash.
+      label: Slod version
+      description: Output of `slod --version` or commit hash.
     validations:
       required: true
 

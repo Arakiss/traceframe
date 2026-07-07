@@ -1,25 +1,25 @@
 # Harness Integration
 
-Traceframe can be used as a CLI or as a small Rust library inside an agent
+Slod can be used as a CLI or as a small Rust library inside an agent
 harness.
 
 Use the CLI when the host is shell-first:
 
 ```bash
-traceframe run --run-id local-test -- cargo test
-traceframe ledger rebuild
-traceframe ledger list
+slod run --run-id local-test -- cargo test
+slod ledger rebuild
+slod ledger list
 ```
 
 Use the library API when the harness already runs in Rust and should avoid
 shelling out for every event:
 
 ```rust
-use traceframe::trace::TraceRecorder;
+use slod::trace::TraceRecorder;
 
 fn run_harness() -> anyhow::Result<()> {
     let recorder = TraceRecorder::start(
-        ".traceframe/runs/my-agent-run.traceframe",
+        ".slod/runs/my-agent-run.slod",
         "my-agent-run",
         true,
     )?;
@@ -37,15 +37,15 @@ fn run_harness() -> anyhow::Result<()> {
 Use hook ingestion when the harness already emits JSON lifecycle hooks:
 
 ```bash
-traceframe hook ingest \
+slod hook ingest \
   --source generic \
-  --dir .traceframe/runs
+  --dir .slod/runs
 ```
 
 With `--dir`, the run id and trace file are derived per host session from the
 payload, so the command needs no `--run-id` or `--init-if-missing`. Pass
 `--file` instead to target one explicit trace. `--source` is a free-form label
-the host chooses; traceframe stores it verbatim and never names a specific
+the host chooses; slod stores it verbatim and never names a specific
 harness.
 
 The hook payload is read from stdin and mapped to `tool.call`, `tool.result`,
@@ -60,10 +60,10 @@ can inspect later.
 ## Recommended Run Layout
 
 ```text
-.traceframe/
+.slod/
   runs/
-    my-agent-run.traceframe
-  ledger.traceframe
+    my-agent-run.slod
+  ledger.slod
   reports/
     my-agent-run.html
 ```
@@ -71,16 +71,16 @@ can inspect later.
 After a batch of runs:
 
 ```bash
-traceframe ledger rebuild
-traceframe ledger list --status failed
+slod ledger rebuild
+slod ledger list --status failed
 ```
 
 ## With a policy layer
 
-A policy layer and Traceframe solve adjacent harness problems:
+A policy layer and Slod solve adjacent harness problems:
 
 - A policy layer decides whether an observed capability should be allowed.
-- Traceframe records what happened around the run.
+- Slod records what happened around the run.
 
 A harness can record policy decisions as `permission.decision` events so a
 failed run contains both the policy outcome and the surrounding tool/model/error

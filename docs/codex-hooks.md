@@ -1,6 +1,6 @@
 # Codex / OMX hook wiring
 
-How to wire a Codex or OMX (oh-my-codex) style harness into traceframe. The
+How to wire a Codex or OMX (oh-my-codex) style harness into slod. The
 event mapping, payload tolerance, and `--source` semantics are the generic
 ones documented in [hooks.md](hooks.md) — `--source` is a free-form label, so
 `codex` and `omx` are conventions, not special cases. This page only covers
@@ -15,15 +15,15 @@ into it on stdin:
 #!/usr/bin/env sh
 set -eu
 
-traceframe hook ingest \
-  --source "${TRACEFRAME_SOURCE:-codex}" \
-  --dir "${TRACEFRAME_DIR:-.traceframe/runs}"
+slod hook ingest \
+  --source "${SLOD_SOURCE:-codex}" \
+  --dir "${SLOD_DIR:-.slod/runs}"
 ```
 
-With `--dir`, traceframe derives `run-<session_id>` from the payload, so every
+With `--dir`, slod derives `run-<session_id>` from the payload, so every
 event from the same Codex session lands in one trace and parallel sessions
 stay separate. For a single explicitly-managed trace, use the
-`--file "$TRACEFRAME_FILE" --init-if-missing` form instead (see hooks.md).
+`--file "$SLOD_FILE" --init-if-missing` form instead (see hooks.md).
 
 Label discipline for mixed fleets: `--source codex`, `--source omx`, and
 `--source claude-code` keep one operator's two harnesses distinguishable in
@@ -31,7 +31,7 @@ the same ledger.
 
 ## Current boundary
 
-Traceframe does not install itself into `~/.codex/hooks.json` (or any host
+Slod does not install itself into `~/.codex/hooks.json` (or any host
 config) yet. The adapter and smoke test are versioned first, so real hook
 installation can be added later as a separate opt-in command with reviewable
 behavior.

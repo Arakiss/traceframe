@@ -4,21 +4,21 @@ set -eu
 repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$repo_root"
 
-traceframe_bin="${TRACEFRAME_BIN:-$repo_root/target/debug/traceframe}"
-if [ ! -x "$traceframe_bin" ]; then
+slod_bin="${SLOD_BIN:-$repo_root/target/debug/slod}"
+if [ ! -x "$slod_bin" ]; then
   cargo build >/dev/null
 fi
 
-tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/traceframe-codex-omx-hook-smoke.XXXXXX")"
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/slod-codex-omx-hook-smoke.XXXXXX")"
 trap 'rm -rf "$tmp_dir"' EXIT
 
-runs_dir="$tmp_dir/.traceframe/runs"
-reports_dir="$tmp_dir/.traceframe/reports"
-ledger_file="$tmp_dir/.traceframe/ledger.traceframe"
+runs_dir="$tmp_dir/.slod/runs"
+reports_dir="$tmp_dir/.slod/reports"
+ledger_file="$tmp_dir/.slod/ledger.slod"
 mkdir -p "$runs_dir" "$reports_dir"
 
 run_tf() {
-  "$traceframe_bin" "$@"
+  "$slod_bin" "$@"
 }
 
 assert_contains() {
@@ -32,7 +32,7 @@ assert_contains() {
   fi
 }
 
-hook_trace="$runs_dir/codex-omx-hook.traceframe"
+hook_trace="$runs_dir/codex-omx-hook.slod"
 hook_report="$reports_dir/codex-omx-hook.html"
 
 run_tf hook ingest \
@@ -70,7 +70,7 @@ run_tf finish \
   --status failed \
   --summary "codex/omx hook smoke completed with a simulated hook error" \
   >"$tmp_dir/hook.finish"
-assert_contains "$tmp_dir/hook.finish" "traceframe finish"
+assert_contains "$tmp_dir/hook.finish" "slod finish"
 
 run_tf verify --file "$hook_trace" >"$tmp_dir/hook.verify"
 assert_contains "$tmp_dir/hook.verify" "valid trace"
@@ -90,7 +90,7 @@ assert_contains "$tmp_dir/hook.inspect" "simulated host hook failure"
 
 run_tf render --file "$hook_trace" --html "$hook_report" >/dev/null
 test -s "$hook_report"
-assert_contains "$hook_report" "traceframe report"
+assert_contains "$hook_report" "slod report"
 
 run_tf ledger rebuild --dir "$runs_dir" --out "$ledger_file" >"$tmp_dir/ledger.rebuild"
 assert_contains "$tmp_dir/ledger.rebuild" "entries     1"
@@ -100,4 +100,4 @@ run_tf ledger show --file "$ledger_file" --run-id codex-omx-hook >"$tmp_dir/ledg
 assert_contains "$tmp_dir/ledger.show" "errors: 1"
 assert_contains "$tmp_dir/ledger.show" "permission_decisions: 1"
 
-echo "traceframe codex/omx hook smoke: ok"
+echo "slod codex/omx hook smoke: ok"

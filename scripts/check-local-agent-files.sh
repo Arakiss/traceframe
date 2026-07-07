@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Fail if local-only agent instruction or run-state files are tracked.
 #
-# Traceframe is a public, harness-agnostic project. Files that belong to a
+# Slod is a public, harness-agnostic project. Files that belong to a
 # private agent setup must never be committed. This is the repository's safety
 # net: a fresh clone does not carry a developer's global gitignore, so the
 # check lives in-tree.

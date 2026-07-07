@@ -1,6 +1,6 @@
 //! Best-effort host context for freshly created traces.
 //!
-//! When `traceframe` opens a `run.started` event it tags it with where the run
+//! When `slod` opens a `run.started` event it tags it with where the run
 //! was born: the working directory and, when that directory lives inside a git
 //! repository, the branch, short commit, and repository name. Detection is
 //! optional by design — a missing git binary or a directory outside any repo
@@ -89,10 +89,7 @@ mod tests {
 
     #[test]
     fn repo_name_takes_final_path_component() {
-        assert_eq!(
-            repo_name("/home/dev/traceframe").as_deref(),
-            Some("traceframe")
-        );
+        assert_eq!(repo_name("/home/dev/slod").as_deref(), Some("slod"));
         assert_eq!(repo_name("/").as_deref(), None);
     }
 }

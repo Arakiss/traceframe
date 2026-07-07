@@ -11,26 +11,26 @@ fn ledger_rebuild_lists_filters_and_shows_runs() {
     let dir = tempdir().unwrap();
     let runs_dir = dir.path().join("runs");
     fs::create_dir(&runs_dir).unwrap();
-    let success_path = runs_dir.join("success.traceframe");
-    let failed_path = runs_dir.join("failed.traceframe");
-    let ledger_path = dir.path().join("ledger.traceframe");
+    let success_path = runs_dir.join("success.slod");
+    let failed_path = runs_dir.join("failed.slod");
+    let ledger_path = dir.path().join("ledger.slod");
 
     write_trace_with_status(&success_path, "run-success", "success");
     write_trace_with_status(&failed_path, "run-failed", "failed");
 
-    traceframe()
+    slod()
         .args(["ledger", "rebuild", "--dir"])
         .arg(&runs_dir)
         .args(["--out"])
         .arg(&ledger_path)
         .assert()
         .success()
-        .stdout(predicate::str::contains("traceframe ledger rebuild"))
+        .stdout(predicate::str::contains("slod ledger rebuild"))
         .stdout(predicate::str::contains("entries     2"));
 
     assert!(ledger_path.exists());
 
-    traceframe()
+    slod()
         .args(["ledger", "list", "--file"])
         .arg(&ledger_path)
         .assert()
@@ -39,7 +39,7 @@ fn ledger_rebuild_lists_filters_and_shows_runs() {
         .stdout(predicate::str::contains("run-success"))
         .stdout(predicate::str::contains("run-failed"));
 
-    traceframe()
+    slod()
         .args(["ledger", "list", "--file"])
         .arg(&ledger_path)
         .args(["--status", "failed"])
@@ -48,7 +48,7 @@ fn ledger_rebuild_lists_filters_and_shows_runs() {
         .stdout(predicate::str::contains("run-failed"))
         .stdout(predicate::str::contains("run-success").not());
 
-    traceframe()
+    slod()
         .args(["ledger", "show", "--file"])
         .arg(&ledger_path)
         .args(["--run-id", "run-success"])
@@ -64,17 +64,17 @@ fn ledger_indexes_open_traces() {
     let dir = tempdir().unwrap();
     let runs_dir = dir.path().join("runs");
     fs::create_dir(&runs_dir).unwrap();
-    let open_path = runs_dir.join("open.traceframe");
-    let ledger_path = dir.path().join("ledger.traceframe");
+    let open_path = runs_dir.join("open.slod");
+    let ledger_path = dir.path().join("ledger.slod");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&open_path)
         .args(["--run-id", "run-open"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["ledger", "rebuild", "--dir"])
         .arg(&runs_dir)
         .args(["--out"])
@@ -82,7 +82,7 @@ fn ledger_indexes_open_traces() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["ledger", "show", "--file"])
         .arg(&ledger_path)
         .args(["--run-id", "run-open"])
@@ -97,12 +97,12 @@ fn ledger_show_reports_missing_run() {
     let dir = tempdir().unwrap();
     let runs_dir = dir.path().join("runs");
     fs::create_dir(&runs_dir).unwrap();
-    let trace_path = runs_dir.join("sample.traceframe");
-    let ledger_path = dir.path().join("ledger.traceframe");
+    let trace_path = runs_dir.join("sample.slod");
+    let ledger_path = dir.path().join("ledger.slod");
 
     write_trace_with_status(&trace_path, "run-present", "success");
 
-    traceframe()
+    slod()
         .args(["ledger", "rebuild", "--dir"])
         .arg(&runs_dir)
         .args(["--out"])
@@ -110,7 +110,7 @@ fn ledger_show_reports_missing_run() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["ledger", "show", "--file"])
         .arg(&ledger_path)
         .args(["--run-id", "run-missing"])
@@ -126,11 +126,11 @@ fn ledger_rebuild_rejects_malformed_trace_file() {
     let dir = tempdir().unwrap();
     let runs_dir = dir.path().join("runs");
     fs::create_dir(&runs_dir).unwrap();
-    let trace_path = runs_dir.join("bad.traceframe");
-    let ledger_path = dir.path().join("ledger.traceframe");
+    let trace_path = runs_dir.join("bad.slod");
+    let ledger_path = dir.path().join("ledger.slod");
     fs::write(&trace_path, "{bad}\n").unwrap();
 
-    traceframe()
+    slod()
         .args(["ledger", "rebuild", "--dir"])
         .arg(&runs_dir)
         .args(["--out"])

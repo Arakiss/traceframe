@@ -558,6 +558,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
+name = "slod"
+version = "0.1.2"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "clap",
+ "predicates",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "time",
+ "uuid",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -622,21 +637,6 @@ checksum = "2e70e4c5a0e0a8a4823ad65dfe1a6930e4f4d756dcd9dd7939022b5e8c501215"
 dependencies = [
  "num-conv",
  "time-core",
-]
-
-[[package]]
-name = "traceframe"
-version = "0.1.2"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "clap",
- "predicates",
- "serde",
- "serde_json",
- "tempfile",
- "time",
- "uuid",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-{"version":1,"run_id":"run-agent-demo","event_id":"demo-000","kind":"run.started","ts_ms":1000,"seq":0,"payload":{"created_by":"traceframe","status":"started"}}
+{"version":1,"run_id":"run-agent-demo","event_id":"demo-000","kind":"run.started","ts_ms":1000,"seq":0,"payload":{"created_by":"slod","status":"started"}}
 {"version":1,"run_id":"run-agent-demo","event_id":"demo-001","kind":"model.call","ts_ms":1010,"seq":1,"payload":{"provider":"openai","model":"gpt-5.5","purpose":"plan file edit"}}
 {"version":1,"run_id":"run-agent-demo","event_id":"demo-002","kind":"permission.decision","ts_ms":1020,"seq":2,"payload":{"source":"policy","capability":"fs.write:README.md","decision":"allow"}}
 {"version":1,"run_id":"run-agent-demo","event_id":"demo-003","kind":"tool.call","ts_ms":1030,"seq":3,"payload":{"tool":"shell","command":"cargo test"}}

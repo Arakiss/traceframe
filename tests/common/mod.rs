@@ -7,8 +7,8 @@ use std::{fs, path::Path, process::Command as StdCommand};
 use assert_cmd::Command;
 use serde_json::Value;
 
-pub fn traceframe() -> Command {
-    Command::cargo_bin("traceframe").expect("traceframe binary")
+pub fn slod() -> Command {
+    Command::cargo_bin("slod").expect("slod binary")
 }
 
 /// Parse the first newline-delimited event of a trace into JSON.
@@ -49,7 +49,7 @@ pub fn git_capture(repo: &Path, args: &[&str]) -> String {
 pub fn init_git_repo(repo: &Path) {
     run_git(repo, &["init"]);
     run_git(repo, &["config", "user.email", "test@example.com"]);
-    run_git(repo, &["config", "user.name", "Traceframe Test"]);
+    run_git(repo, &["config", "user.name", "Slod Test"]);
     fs::write(repo.join("README.md"), "host context fixture\n").unwrap();
     run_git(repo, &["add", "README.md"]);
     run_git(repo, &["commit", "-m", "chore: seed host context fixture"]);
@@ -60,14 +60,14 @@ pub fn write_valid_trace(path: &Path) {
 }
 
 pub fn write_trace_with_status(path: &Path, run_id: &str, status: &str) {
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(path)
         .args(["--run-id", run_id])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(path)
         .args([
@@ -79,7 +79,7 @@ pub fn write_trace_with_status(path: &Path, run_id: &str, status: &str) {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(path)
         .args([
@@ -91,7 +91,7 @@ pub fn write_trace_with_status(path: &Path, run_id: &str, status: &str) {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(path)
         .args([
@@ -103,7 +103,7 @@ pub fn write_trace_with_status(path: &Path, run_id: &str, status: &str) {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(path)
         .args([
@@ -120,7 +120,7 @@ pub fn write_trace_with_status(path: &Path, run_id: &str, status: &str) {
         .success();
 
     if status != "success" {
-        traceframe()
+        slod()
             .args(["record", "--file"])
             .arg(path)
             .args([
@@ -133,7 +133,7 @@ pub fn write_trace_with_status(path: &Path, run_id: &str, status: &str) {
             .success();
     }
 
-    traceframe()
+    slod()
         .args(["finish", "--file"])
         .arg(path)
         .args(["--status", status])

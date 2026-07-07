@@ -1,16 +1,16 @@
-# Publishing Traceframe
+# Publishing Slod
 
-Traceframe ships GitHub releases automatically and is **not** published to
+Slod ships GitHub releases automatically and is **not** published to
 crates.io yet. This document defines the release flow and the gate so the first
 crates.io publication is deliberate instead of cosmetic.
 
 ## Current Channel
 
-- GitHub repository: <https://github.com/Arakiss/traceframe>
-- Domain reserved for future site: <https://traceframe.dev>
+- GitHub repository: <https://github.com/Arakiss/slod>
+- Domain reserved for future site: <https://slod.dev>
 - Install path today: `cargo install --path .`
 - Tagged releases: signed binaries + SBOM attached to each GitHub release.
-- Package name reserved locally: `traceframe` (not yet claimed on crates.io).
+- Package name reserved locally: `slod` (not yet claimed on crates.io).
 
 ## Release Flow
 
@@ -29,7 +29,7 @@ Verification of the resulting artifacts is documented in
 [release-signing.md](release-signing.md).
 
 To pause release automation during maintenance, set the repository variable
-`TRACEFRAME_RELEASE_HOLD=true`; normal CI keeps running.
+`SLOD_RELEASE_HOLD=true`; normal CI keeps running.
 
 ## First crates.io Publish Gate
 
@@ -83,11 +83,11 @@ cargo package
 
 The first published release should explain:
 
-- Traceframe is local-first and file-based.
+- Slod is local-first and file-based.
 - The trace file is the source of truth.
 - The ledger is rebuildable and derived.
 - The crate is pre-1.0 and may break schema/CLI contracts.
-- Traceframe complements policy layers; it does not replace sandboxing or
+- Slod complements policy layers; it does not replace sandboxing or
   permission controls.
 
 ## Non-Goal

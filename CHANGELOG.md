@@ -1,8 +1,10 @@
 # Changelog
 
-All notable user-facing changes to Traceframe are tracked here.
+All notable user-facing changes to Slod (formerly Traceframe, renamed
+2026-07-07) are tracked here. Entries below the rename keep the old name —
+they are history, not documentation.
 
-Traceframe is pre-1.0. Breaking schema, CLI, and output changes may happen
+Slod is pre-1.0. Breaking schema, CLI, and output changes may happen
 while the public harness contract is still being proven.
 
 From this release onward the changelog is generated from Conventional Commits;

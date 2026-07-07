@@ -1,4 +1,4 @@
-# cargo-deny configuration for traceframe.
+# cargo-deny configuration for slod.
 #
 # Run locally with: `cargo deny check`
 # CI runs: advisories, bans, licenses, sources.

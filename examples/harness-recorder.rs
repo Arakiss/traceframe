@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use traceframe::trace::TraceRecorder;
+use slod::trace::TraceRecorder;
 
 fn main() -> anyhow::Result<()> {
-    let path = PathBuf::from(".traceframe/runs/example-harness.traceframe");
+    let path = PathBuf::from(".slod/runs/example-harness.slod");
     let recorder = TraceRecorder::start(&path, "example-harness", true)?;
 
     recorder.model_call("openai", "gpt-5.5")?;

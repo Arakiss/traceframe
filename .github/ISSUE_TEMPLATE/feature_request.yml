@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a Traceframe capability or integration.
+description: Propose a Slod capability or integration.
 title: "feat: "
 labels: ["enhancement", "triage"]
 body:
@@ -15,7 +15,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: What should Traceframe add or change?
+      description: What should Slod add or change?
     validations:
       required: true
 
@@ -41,5 +41,5 @@ body:
       label: Contract checks
       options:
         - label: This keeps trace files as the source of truth.
-        - label: This does not turn Traceframe into an agent runtime or sandbox.
+        - label: This does not turn Slod into an agent runtime or sandbox.
         - label: If this needs a database, the database is a rebuildable derived index.

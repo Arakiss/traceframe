@@ -1,29 +1,29 @@
 # Storage model
 
-Traceframe records agent runs. The storage decision matters because the trace is
+Slod records agent runs. The storage decision matters because the trace is
 the evidence artifact: it must be readable by humans, parseable by agents, easy
 to attach to issues, and robust when a process crashes halfway through a run.
 
 ## Decision
 
-The source of truth is one append-only Traceframe trace file per run. The
+The source of truth is one append-only Slod trace file per run. The
 current file encoding is line-delimited JSON because it is simple to append,
 inspect, diff, and recover from.
 
 Recommended local layout:
 
 ```text
-.traceframe/
+.slod/
   runs/
-    run-2026-05-03T09-00-00Z.traceframe
-  ledger.traceframe
+    run-2026-05-03T09-00-00Z.slod
+  ledger.slod
   reports/
     run-2026-05-03T09-00-00Z.html
 ```
 
 Most commands accept an explicit `--file` path. That keeps v0.1 simple and lets
-agents decide where a trace belongs. For one-command dogfooding, `traceframe run`
-can also create a default trace under `.traceframe/runs/` when `--file` is not
+agents decide where a trace belongs. For one-command dogfooding, `slod run`
+can also create a default trace under `.slod/runs/` when `--file` is not
 provided.
 
 ## Why line-delimited JSON first
@@ -43,14 +43,14 @@ Line-delimited JSON matches the first-principles harness requirement:
 - **Exportable.** OpenTelemetry, SQLite, Parquet, HTML, or dashboards can be
   generated from it later.
 
-This is an implementation choice, not the product identity. Traceframe's public
+This is an implementation choice, not the product identity. Slod's public
 contract is the event model and the local evidence artifact. The encoding can
 gain exports or derived indexes without turning v0.1 into a platform.
 
 ## Why not a database as source of truth in v0.1
 
 A database is attractive when there are many runs, multiple writers, search
-queries, dashboards, retention rules, and aggregate analytics. Traceframe is not
+queries, dashboards, retention rules, and aggregate analytics. Slod is not
 there yet.
 
 Starting with a database would add costs too early:
@@ -78,7 +78,7 @@ Can a real agent run leave behind a trace that explains what happened?
 
 SQLite is the likely first database, but as a derived local index.
 
-Use SQLite when Traceframe needs:
+Use SQLite when Slod needs:
 
 - fast search across many trace files;
 - run catalog metadata;
@@ -89,7 +89,7 @@ Use SQLite when Traceframe needs:
 Important rule:
 
 ```text
-SQLite should be rebuildable from Traceframe trace files.
+SQLite should be rebuildable from Slod trace files.
 ```
 
 That keeps the event log as evidence and the database as acceleration.
@@ -97,24 +97,24 @@ That keeps the event log as evidence and the database as acceleration.
 Possible future layout:
 
 ```text
-.traceframe/
+.slod/
   runs/
-    *.traceframe
-  ledger.traceframe
+    *.slod
+  ledger.slod
   index/
-    traceframe.sqlite
+    slod.sqlite
 ```
 
 Possible future commands:
 
 ```bash
-traceframe index rebuild --dir .traceframe/runs --ledger .traceframe/ledger.traceframe --db .traceframe/index/traceframe.sqlite
-traceframe index query --status failed --tool shell
+slod index rebuild --dir .slod/runs --ledger .slod/ledger.slod --db .slod/index/slod.sqlite
+slod index query --status failed --tool shell
 ```
 
 ## Do we need a ledger?
 
-Yes, and Traceframe now includes it as a derived local catalog.
+Yes, and Slod now includes it as a derived local catalog.
 
 A ledger is useful when there are many traces and agents need a fast catalog of
 runs without opening every trace file. It should answer:
@@ -134,18 +134,18 @@ ledger is a catalog.
 Recommended rule:
 
 ```text
-ledger.traceframe must be rebuildable from runs/*.traceframe
+ledger.slod must be rebuildable from runs/*.slod
 ```
 
 This avoids having two competing truths. If the ledger is corrupt or deleted,
-Traceframe can rebuild it. If a trace is deleted, the evidence is gone.
+Slod can rebuild it. If a trace is deleted, the evidence is gone.
 
 Current commands:
 
 ```bash
-traceframe ledger rebuild --dir .traceframe/runs --out .traceframe/ledger.traceframe
-traceframe ledger list --file .traceframe/ledger.traceframe --status failed
-traceframe ledger show --file .traceframe/ledger.traceframe --run-id run-agent-demo
+slod ledger rebuild --dir .slod/runs --out .slod/ledger.slod
+slod ledger list --file .slod/ledger.slod --status failed
+slod ledger show --file .slod/ledger.slod --run-id run-agent-demo
 ```
 
 The ledger comes before SQLite because the current bottleneck is
@@ -186,7 +186,7 @@ Cons:
 - less transparent for humans and agents;
 - migrations required;
 - harder to attach/review directly;
-- risks turning Traceframe into an app before the trace contract is proven.
+- risks turning Slod into an app before the trace contract is proven.
 
 ### SQLite derived index
 

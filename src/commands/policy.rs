@@ -3,7 +3,7 @@
 use std::{path::Path, process};
 
 use anyhow::Result;
-use traceframe::{policy, trace::Trace};
+use slod::{policy, trace::Trace};
 
 use super::{eprint_action, print_action};
 

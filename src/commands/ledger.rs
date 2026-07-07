@@ -3,7 +3,7 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use traceframe::ledger;
+use slod::ledger;
 
 use super::print_action;
 

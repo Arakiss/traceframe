@@ -9,17 +9,17 @@ use common::*;
 #[test]
 fn render_html_report_highlights_tools_states_and_permissions() {
     let dir = tempdir().unwrap();
-    let trace_path = dir.path().join("rich.traceframe");
+    let trace_path = dir.path().join("rich.slod");
     let html_path = dir.path().join("rich.html");
 
-    traceframe()
+    slod()
         .args(["init", "--file"])
         .arg(&trace_path)
         .args(["--run-id", "run-render"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -31,7 +31,7 @@ fn render_html_report_highlights_tools_states_and_permissions() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -43,7 +43,7 @@ fn render_html_report_highlights_tools_states_and_permissions() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -55,7 +55,7 @@ fn render_html_report_highlights_tools_states_and_permissions() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -67,7 +67,7 @@ fn render_html_report_highlights_tools_states_and_permissions() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["record", "--file"])
         .arg(&trace_path)
         .args([
@@ -79,14 +79,14 @@ fn render_html_report_highlights_tools_states_and_permissions() {
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["finish", "--file"])
         .arg(&trace_path)
         .args(["--status", "failed", "--summary", "run blocked"])
         .assert()
         .success();
 
-    traceframe()
+    slod()
         .args(["render", "--file"])
         .arg(&trace_path)
         .args(["--html"])
@@ -96,7 +96,7 @@ fn render_html_report_highlights_tools_states_and_permissions() {
 
     let html = fs::read_to_string(&html_path).unwrap();
     // Header and identity.
-    assert!(html.contains("traceframe report"));
+    assert!(html.contains("slod report"));
     assert!(html.contains("run-render"));
     // Timeline with tool detail.
     assert!(html.contains("Timeline"));
@@ -112,7 +112,7 @@ fn render_html_report_highlights_tools_states_and_permissions() {
     assert!(html.contains("tool failures"));
 
     // The compact summary gains failure and human-duration clarity.
-    traceframe()
+    slod()
         .args(["summary", "--file"])
         .arg(&trace_path)
         .assert()

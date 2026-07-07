@@ -1,13 +1,13 @@
 # Importing harness transcripts
 
-Hooks capture the future; the importer captures the past. `traceframe import`
+Hooks capture the future; the importer captures the past. `slod import`
 backfills traces from session transcripts a harness already wrote on disk, so
 layer-4 consumers can mine history without waiting for live capture.
 
 ```bash
-traceframe import --format claude-code --input session.jsonl
-traceframe ledger rebuild
-traceframe summary --file .traceframe/runs/run-<session>.traceframe
+slod import --format claude-code --input session.jsonl
+slod ledger rebuild
+slod summary --file .slod/runs/run-<session>.slod
 ```
 
 Supported formats: `claude-code` (a Claude Code session transcript,
@@ -16,8 +16,8 @@ A `codex` format is on the roadmap.
 
 ## Behavior
 
-- **Target.** With `--dir` (default `.traceframe/runs`), the trace lands at
-  `<dir>/<run_id>.traceframe`; the run id is `run-<session_id>` derived from
+- **Target.** With `--dir` (default `.slod/runs`), the trace lands at
+  `<dir>/<run_id>.slod`; the run id is `run-<session_id>` derived from
   the transcript, or the input file stem as a fallback (`--run-id` overrides).
   `--file` targets one explicit path instead. An existing non-empty target is
   refused unless `--force`.

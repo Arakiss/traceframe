@@ -1,4 +1,4 @@
-//! Command handlers for the traceframe CLI.
+//! Command handlers for the slod CLI.
 //!
 //! `main.rs` owns the clap definition and a thin dispatch; each submodule owns
 //! the behavior for one area of the CLI. Output formatting and a couple of
@@ -33,7 +33,7 @@ pub(crate) fn eprint_action(action: &str, fields: &[(&str, String)]) {
 }
 
 fn format_action(action: &str, fields: &[(&str, String)]) -> String {
-    let mut output = format!("traceframe {action}\n");
+    let mut output = format!("slod {action}\n");
     for (label, value) in fields {
         output.push_str(&format!("  {label:<11} {value}\n"));
     }

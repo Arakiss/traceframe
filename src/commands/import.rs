@@ -3,7 +3,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Result, bail};
-use traceframe::import::{parse_claude_code, write_trace};
+use slod::import::{parse_claude_code, write_trace};
 
 use super::print_action;
 
@@ -30,8 +30,8 @@ pub(crate) fn import(
     let target: PathBuf = match file {
         Some(file) => file.to_path_buf(),
         None => dir
-            .unwrap_or(Path::new(".traceframe/runs"))
-            .join(format!("{}.traceframe", imported.run_id)),
+            .unwrap_or(Path::new(".slod/runs"))
+            .join(format!("{}.slod", imported.run_id)),
     };
     write_trace(&target, &imported.events, force)?;
 

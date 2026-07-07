@@ -52,20 +52,20 @@ jobs:
 
       - name: Smoke sample trace
         run: |
-          cargo run -- verify --file examples/agent-run.traceframe
-          cargo run -- summary --file examples/agent-run.traceframe
-          cargo run -- render --file examples/agent-run.traceframe --html /tmp/traceframe-agent-run.html
-          test -s /tmp/traceframe-agent-run.html
+          cargo run -- verify --file examples/agent-run.slod
+          cargo run -- summary --file examples/agent-run.slod
+          cargo run -- render --file examples/agent-run.slod --html /tmp/slod-agent-run.html
+          test -s /tmp/slod-agent-run.html
 
       - name: Dogfood command tracing
         run: |
-          mkdir -p /tmp/traceframe-runs
-          cargo run -- run --file /tmp/traceframe-runs/ci-dogfood.traceframe --run-id ci-dogfood --force -- cargo --version
-          cargo run -- ledger rebuild --dir /tmp/traceframe-runs --out /tmp/traceframe-ledger.traceframe
-          cargo run -- ledger list --file /tmp/traceframe-ledger.traceframe
-          cargo run -- ledger show --file /tmp/traceframe-ledger.traceframe --run-id ci-dogfood
-          cargo run -- verify --file /tmp/traceframe-runs/ci-dogfood.traceframe
-          cargo run -- summary --file /tmp/traceframe-runs/ci-dogfood.traceframe
+          mkdir -p /tmp/slod-runs
+          cargo run -- run --file /tmp/slod-runs/ci-dogfood.slod --run-id ci-dogfood --force -- cargo --version
+          cargo run -- ledger rebuild --dir /tmp/slod-runs --out /tmp/slod-ledger.slod
+          cargo run -- ledger list --file /tmp/slod-ledger.slod
+          cargo run -- ledger show --file /tmp/slod-ledger.slod --run-id ci-dogfood
+          cargo run -- verify --file /tmp/slod-runs/ci-dogfood.slod
+          cargo run -- summary --file /tmp/slod-runs/ci-dogfood.slod
 
   commitlint:
     name: commitlint

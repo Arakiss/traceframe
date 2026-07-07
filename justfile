@@ -1,4 +1,4 @@
-# Traceframe task runner (just).
+# Slod task runner (just).
 #
 # Install: https://just.systems
 #

@@ -1,18 +1,18 @@
 ---
-name: traceframe
-description: Operate Traceframe, the local-first trace recorder and inspector for AI agent workflows.
+name: slod
+description: Operate Slod, the local-first trace recorder and inspector for AI agent workflows.
 ---
 
-# Traceframe Skill
+# Slod Skill
 
 Use this skill when working in a repository that should leave inspectable local
-evidence for AI-agent runs, or when modifying Traceframe itself.
+evidence for AI-agent runs, or when modifying Slod itself.
 
 ## Core Model
 
 - Trace files are the source of truth.
 - Ledgers, reports, indexes, dashboards, and exports are derived artifacts.
-- Traceframe records what happened; it does not approve, deny, sandbox, or
+- Slod records what happened; it does not approve, deny, sandbox, or
   execute tools beyond the explicit `run` / `exec` wrapper commands.
 - Use a policy layer or host-native permission controls for permission
   decisions, then record those decisions as `permission.decision` events.
@@ -20,14 +20,14 @@ evidence for AI-agent runs, or when modifying Traceframe itself.
 ## Common Commands
 
 ```bash
-traceframe run --run-id local-test -- cargo test
-traceframe verify --file .traceframe/runs/local-test.traceframe
-traceframe summary --file .traceframe/runs/local-test.traceframe
-traceframe inspect --file .traceframe/runs/local-test.traceframe
-traceframe render --file .traceframe/runs/local-test.traceframe --html .traceframe/reports/local-test.html
-traceframe ledger rebuild
-traceframe ledger list
-traceframe ledger list --status failed
+slod run --run-id local-test -- cargo test
+slod verify --file .slod/runs/local-test.slod
+slod summary --file .slod/runs/local-test.slod
+slod inspect --file .slod/runs/local-test.slod
+slod render --file .slod/runs/local-test.slod --html .slod/reports/local-test.html
+slod ledger rebuild
+slod ledger list
+slod ledger list --status failed
 ```
 
 For host hook payloads, pipe one JSON hook payload into `hook ingest`. Use
@@ -36,9 +36,9 @@ trace is created on first use, so no `--run-id` or `--init-if-missing` is
 needed):
 
 ```bash
-traceframe hook ingest \
+slod hook ingest \
   --source generic \
-  --dir .traceframe/runs
+  --dir .slod/runs
 ```
 
 `--source` is a free-form label the host chooses (default `generic`). Pass
@@ -49,10 +49,10 @@ traceframe hook ingest \
 Use `TraceRecorder` when the harness is already Rust:
 
 ```rust
-use traceframe::trace::TraceRecorder;
+use slod::trace::TraceRecorder;
 
 let recorder = TraceRecorder::start(
-    ".traceframe/runs/my-agent-run.traceframe",
+    ".slod/runs/my-agent-run.slod",
     "my-agent-run",
     true,
 )?;
@@ -64,9 +64,9 @@ recorder.tool_result("shell", "cargo test", true, Some(0), Some(320))?;
 recorder.finish("success", Some("harness completed"))?;
 ```
 
-## Traceframe Repo Gate
+## Slod Repo Gate
 
-Before claiming a Traceframe change is complete:
+Before claiming a Slod change is complete:
 
 ```bash
 cargo fmt --check

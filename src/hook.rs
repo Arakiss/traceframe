@@ -6,7 +6,7 @@ use crate::trace::EventKind;
 /// Default source label recorded when a host hook does not name itself.
 pub const DEFAULT_SOURCE: &str = "generic";
 
-/// Normalize a free-form `--source` label. Traceframe never hardcodes the names
+/// Normalize a free-form `--source` label. Slod never hardcodes the names
 /// of specific agent harnesses: the label is an opaque string the host chooses,
 /// trimmed and stored verbatim on every mapped event. An empty label falls back
 /// to [`DEFAULT_SOURCE`].
