@@ -153,6 +153,7 @@
     <p class="lede">Este hub recoge el cierre operativo de la entrega v0.2 y el refuerzo de mantenimiento OSS: importador de Codex, exportación JSONL del ledger, CI con matriz Linux/macOS, auditoría de dependencias, Scorecard y Dependabot.</p>
     <div class="meta">
       <span class="chip"><b>Rama</b> · feat/codex-importer</span>
+      <span class="chip"><b>PR</b> · #6 verde</span>
       <span class="chip"><b>Alcance</b> · importador Codex + ledger export + CI OSS</span>
       <span class="chip"><b>Estado</b> · implementado y validado</span>
     </div>
@@ -200,6 +201,7 @@
           <tr><td>private-files, release-readiness y smokes</td><td><span class="badge ok">ok</span></td><td>`host-smoke`, `hook-smoke`, `codex-omx-hook-smoke` y `evidence-gate-smoke` pasados.</td></tr>
           <tr><td>cargo build --release --locked</td><td><span class="badge ok">ok</span></td><td>Validación local del nuevo job de release readiness.</td></tr>
           <tr><td>YAML + diff</td><td><span class="badge ok">ok</span></td><td>Workflows parseados con Ruby YAML; `git diff --check` limpio. `actionlint` no está instalado en esta máquina.</td></tr>
+          <tr><td>PR #6 · checks remotos</td><td><span class="badge ok">verde</span></td><td>`CI`, `Evidence gate` y `audit` pasaron en GitHub sobre `50ff4fc`.</td></tr>
           <tr><td>Prueba real con Codex</td><td><span class="badge ok">ok</span></td><td>262 eventos, 1 llamada de modelo, 130 llamadas de herramienta, 129 resultados, 10 fallos; traza verificada y ledger exportado.</td></tr>
         </tbody>
       </table>
@@ -213,7 +215,7 @@
       <li><strong>Sin `run.meta`.</strong> La entrega no añade un nuevo tipo de evento; conserva la forma actual y deja los metadatos ampliados para otro punto del roadmap.</li>
       <li><strong>Sin análisis de contenido.</strong> No hay minería de decisiones, puntuación ni revisión de sesiones; eso sigue perteneciendo a consumidores externos.</li>
       <li><strong>`just ci` no se pudo ejecutar tal cual.</strong> `just` no está instalado en esta máquina; los pasos de la comprobación se ejecutaron a mano. La cobertura necesitó apuntar a las herramientas LLVM de Xcode.</li>
-      <li><strong>CI remoto pendiente.</strong> Los workflows nuevos todavía tienen que correr en GitHub cuando se suba esta rama; localmente se validó sintaxis YAML y los comandos que ejecutan.</li>
+      <li><strong>CI remoto verificado.</strong> PR #6 disparó los workflows de GitHub y dejó verdes `CI`, `Evidence gate` y `audit` sobre la rama.</li>
     </ul>
   </section>
 
