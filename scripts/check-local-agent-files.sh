@@ -10,7 +10,7 @@ set -eu
 
 tracked="$(
   git ls-files | awk '
-    $0 == "AGENTS.md" { print }
+    # Root AGENTS.md is the public repo working brief; local agent state stays blocked.
     $0 == "CLAUDE.md" { print }
     $0 ~ /^\.claude(\/|$)/ { print }
     $0 ~ /^\.codex(\/|$)/ { print }

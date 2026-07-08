@@ -16,6 +16,9 @@ _default:
 check: fmt clippy test coverage deny private-files release-readiness smoke
     @echo "--- local check: ok ---"
 
+# Alias used by the agent working brief.
+ci: check
+
 # Check formatting without modifying files.
 fmt:
     cargo fmt --all --check
