@@ -146,6 +146,7 @@ Current commands:
 slod ledger rebuild --dir .slod/runs --out .slod/ledger.slod
 slod ledger list --file .slod/ledger.slod --status failed
 slod ledger show --file .slod/ledger.slod --run-id run-agent-demo
+slod ledger export --file .slod/ledger.slod --jsonl
 ```
 
 The ledger comes before SQLite because the current bottleneck is

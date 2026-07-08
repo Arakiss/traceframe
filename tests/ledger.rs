@@ -57,6 +57,29 @@ fn ledger_rebuild_lists_filters_and_shows_runs() {
         .stdout(predicate::str::contains("run_id: run-success"))
         .stdout(predicate::str::contains("status: success"))
         .stdout(predicate::str::contains("trace_path:"));
+
+    let output = slod()
+        .args(["ledger", "export", "--file"])
+        .arg(&ledger_path)
+        .arg("--jsonl")
+        .output()
+        .expect("ledger export runs");
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let rows = stdout
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(rows.len(), 2);
+    assert!(rows.iter().any(|row| row["run_id"] == "run-success"));
+    assert!(rows.iter().any(|row| row["run_id"] == "run-failed"));
+
+    slod()
+        .args(["ledger", "export", "--file"])
+        .arg(&ledger_path)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("pass --jsonl"));
 }
 
 #[test]

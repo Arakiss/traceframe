@@ -29,7 +29,7 @@ storms, protocol violations, invented file paths). Its needs drive v0.2.
   `deviations` in summaries, rendered with a warn accent, emitted via
   `slod record --kind agent.guess`. This is the empirical basis for
   operator-side "guess logs".
-- **Ledger export.** `slod ledger export --jsonl` — a stable, documented
+- **Ledger export.** ✅ landed: `slod ledger export --jsonl` — a stable, documented
   line format so consumers never parse `.slod` internals directly.
 
 ## v0.3 — capture everywhere

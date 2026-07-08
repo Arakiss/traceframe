@@ -129,6 +129,7 @@ Backfill traces from transcripts your harness already wrote (see
 
 ```bash
 slod import --format claude-code --input session.jsonl
+slod import --format codex --input ~/.codex/sessions/YYYY/MM/DD/rollout-example.jsonl
 slod ledger rebuild
 ```
 
@@ -141,10 +142,13 @@ slod ledger rebuild
 slod ledger list
 slod ledger list --status failed
 slod ledger show --run-id run-demo
+slod ledger export --jsonl
 ```
 
 The ledger is a derived catalog, not a database and not a second source of
-truth. If it is stale or deleted, rebuild it from the trace files.
+truth. If it is stale or deleted, rebuild it from the trace files. Use
+`ledger export --jsonl` when a layer-4 consumer needs a stable machine-readable
+catalog instead of parsing the local ledger file directly.
 
 For host hooks, ingest the JSON payload from stdin instead of wrapping each
 command manually. Use `--dir` for per-session traces: slod derives the

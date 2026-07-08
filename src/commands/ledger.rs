@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use slod::ledger;
 
 use super::print_action;
@@ -32,5 +32,14 @@ pub(crate) fn show(file: &Path, run_id: &str) -> Result<()> {
     let entry = ledger::find_by_run_id(&entries, run_id)
         .with_context(|| format!("run not found in ledger: {run_id}"))?;
     print!("{}", ledger::render_entry(entry));
+    Ok(())
+}
+
+pub(crate) fn export(file: &Path, jsonl: bool) -> Result<()> {
+    if !jsonl {
+        bail!("pass --jsonl (only supported export format)");
+    }
+    let entries = ledger::read(file)?;
+    print!("{}", ledger::render_jsonl(&entries)?);
     Ok(())
 }
