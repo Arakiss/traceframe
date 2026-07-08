@@ -93,12 +93,7 @@ pub fn write(path: &Path, entries: &[LedgerEntry]) -> Result<()> {
             .with_context(|| format!("failed to create {}", parent.display()))?;
     }
 
-    let mut content = String::new();
-    for entry in entries {
-        content.push_str(&serde_json::to_string(entry)?);
-        content.push('\n');
-    }
-
+    let content = render_jsonl(entries)?;
     fs::write(path, content).with_context(|| format!("failed to write {}", path.display()))
 }
 
@@ -192,6 +187,15 @@ pub fn render_entry(entry: &LedgerEntry) -> String {
             .map(|duration| duration.to_string())
             .unwrap_or_else(|| "unknown".to_string())
     )
+}
+
+pub fn render_jsonl(entries: &[LedgerEntry]) -> Result<String> {
+    let mut output = String::new();
+    for entry in entries {
+        output.push_str(&serde_json::to_string(entry)?);
+        output.push('\n');
+    }
+    Ok(output)
 }
 
 fn trace_files(dir: &Path) -> Result<Vec<PathBuf>> {

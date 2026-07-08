@@ -91,7 +91,7 @@ enum Command {
     /// run id is derived from the transcript session when `--run-id` is
     /// omitted.
     Import {
-        /// Transcript format. Supported: claude-code.
+        /// Transcript format. Supported: claude-code, codex.
         #[arg(long)]
         format: String,
         /// Transcript file (newline-delimited JSON).
@@ -204,6 +204,14 @@ enum LedgerCommand {
         #[arg(long)]
         run_id: String,
     },
+    /// Export ledger entries for layer-4 consumers.
+    Export {
+        #[arg(long, default_value = ".slod/ledger.slod")]
+        file: PathBuf,
+        /// Emit stable newline-delimited JSON.
+        #[arg(long, default_value_t = false)]
+        jsonl: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -283,6 +291,7 @@ fn main() -> Result<()> {
                 commands::ledger::list(&file, status.as_deref())?
             }
             LedgerCommand::Show { file, run_id } => commands::ledger::show(&file, &run_id)?,
+            LedgerCommand::Export { file, jsonl } => commands::ledger::export(&file, jsonl)?,
         },
     }
 

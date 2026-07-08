@@ -1,0 +1,70 @@
+# Dependabot configuration for Slod.
+#
+# Keep OSS maintenance small and reviewable: Rust dependency updates are split
+# by runtime/test risk, while GitHub Actions update together weekly.
+
+version: 2
+
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "deps"
+      - "cargo"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      runtime-deps:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+          - "minor"
+        patterns:
+          - "anyhow"
+          - "clap"
+          - "serde"
+          - "serde_json"
+          - "time"
+          - "uuid"
+      test-deps:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+          - "minor"
+        patterns:
+          - "assert_cmd"
+          - "predicates"
+          - "tempfile"
+      rust-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "deps"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      actions:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"

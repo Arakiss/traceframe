@@ -4,12 +4,192 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_RETRY: 10
+  CARGO_HTTP_TIMEOUT: 120
+  RUST_BACKTRACE: 1
+
 jobs:
-  rust:
+  fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Format
+        run: cargo fmt --all --check
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runner: ubuntu-latest
+          # Keep the required check name stable while pinning the actual image.
+          - os: macos-latest
+            runner: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --locked --all-targets
+
+      - name: Test
+        run: cargo test --locked
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install coverage tool
+        run: cargo install cargo-llvm-cov --version 0.8.5 --locked
+
+      - name: Coverage threshold
+        run: cargo llvm-cov --workspace --all-targets --locked --fail-under-lines 80
+
+  release-readiness:
+    name: release readiness
+    runs-on: ubuntu-latest
+    needs: [fmt, clippy, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Release readiness
+        run: sh scripts/check-release-readiness.sh
+
+      - name: Release build
+        run: cargo build --release --locked
+
+  smoke:
+    name: smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runner: ubuntu-latest
+          - os: macos-latest
+            runner: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build slod
+        run: cargo build --locked
+
+      - name: Host smoke
+        run: sh scripts/host-smoke.sh
+
+      - name: Agent hook smoke
+        run: sh scripts/hook-smoke.sh
+
+      - name: Codex / OMX hook smoke
+        run: sh scripts/codex-omx-hook-smoke.sh
+
+      - name: Evidence gate smoke
+        run: sh scripts/evidence-gate-smoke.sh
+
+      - name: Smoke sample trace
+        run: |
+          ./target/debug/slod verify --file examples/agent-run.slod
+          ./target/debug/slod summary --file examples/agent-run.slod
+          ./target/debug/slod render --file examples/agent-run.slod --html /tmp/slod-agent-run.html
+          test -s /tmp/slod-agent-run.html
+
+      - name: Dogfood command tracing
+        run: |
+          mkdir -p /tmp/slod-runs
+          ./target/debug/slod run --file /tmp/slod-runs/ci-dogfood.slod --run-id ci-dogfood --force -- cargo --version
+          ./target/debug/slod ledger rebuild --dir /tmp/slod-runs --out /tmp/slod-ledger.slod
+          ./target/debug/slod ledger list --file /tmp/slod-ledger.slod
+          ./target/debug/slod ledger show --file /tmp/slod-ledger.slod --run-id ci-dogfood
+          ./target/debug/slod verify --file /tmp/slod-runs/ci-dogfood.slod
+          ./target/debug/slod summary --file /tmp/slod-runs/ci-dogfood.slod
+
+  cargo-deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Audit dependencies
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans licenses sources
+
+  private-files:
+    name: private file guard
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,54 +198,33 @@ jobs:
       - name: Verify local agent files not tracked
         run: sh scripts/check-local-agent-files.sh
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy, llvm-tools-preview
-
-      - name: Cache Cargo
-        uses: Swatinem/rust-cache@v2
-
-      - name: Format
-        run: cargo fmt --check
-
-      - name: Clippy
-        run: cargo clippy -- -D warnings
-
-      - name: Test
-        run: cargo test
-
-      - name: Install coverage tool
-        run: cargo install cargo-llvm-cov --version 0.8.5 --locked
-
-      - name: Coverage threshold
-        run: cargo llvm-cov --workspace --all-targets --fail-under-lines 80
-
-      - name: Release readiness
-        run: sh scripts/check-release-readiness.sh
-
-      - name: Host smoke
-        run: sh scripts/host-smoke.sh
-
-      - name: Agent hook smoke
-        run: sh scripts/hook-smoke.sh
-
-      - name: Smoke sample trace
+  rust:
+    name: rust
+    runs-on: ubuntu-latest
+    needs: [fmt, clippy, test, coverage, release-readiness, smoke, cargo-deny, private-files]
+    if: always()
+    steps:
+      - name: Roll up Rust checks
         run: |
-          cargo run -- verify --file examples/agent-run.slod
-          cargo run -- summary --file examples/agent-run.slod
-          cargo run -- render --file examples/agent-run.slod --html /tmp/slod-agent-run.html
-          test -s /tmp/slod-agent-run.html
-
-      - name: Dogfood command tracing
-        run: |
-          mkdir -p /tmp/slod-runs
-          cargo run -- run --file /tmp/slod-runs/ci-dogfood.slod --run-id ci-dogfood --force -- cargo --version
-          cargo run -- ledger rebuild --dir /tmp/slod-runs --out /tmp/slod-ledger.slod
-          cargo run -- ledger list --file /tmp/slod-ledger.slod
-          cargo run -- ledger show --file /tmp/slod-ledger.slod --run-id ci-dogfood
-          cargo run -- verify --file /tmp/slod-runs/ci-dogfood.slod
-          cargo run -- summary --file /tmp/slod-runs/ci-dogfood.slod
+          failed=0
+          for result in \
+            "${{ needs.fmt.result }}" \
+            "${{ needs.clippy.result }}" \
+            "${{ needs.test.result }}" \
+            "${{ needs.coverage.result }}" \
+            "${{ needs['release-readiness'].result }}" \
+            "${{ needs.smoke.result }}" \
+            "${{ needs['cargo-deny'].result }}" \
+            "${{ needs['private-files'].result }}"; do
+            if [ "$result" != "success" ]; then
+              failed=1
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "one or more Rust checks failed"
+            exit 1
+          fi
+          echo "all Rust checks passed"
 
   commitlint:
     name: commitlint
@@ -82,15 +241,3 @@ jobs:
         with:
           configFile: .commitlintrc.yaml
           failOnWarnings: true
-
-  cargo-deny:
-    name: cargo-deny
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Audit dependencies
-        uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          command: check advisories bans licenses sources

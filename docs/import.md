@@ -6,13 +6,15 @@ layer-4 consumers can mine history without waiting for live capture.
 
 ```bash
 slod import --format claude-code --input session.jsonl
+slod import --format codex --input ~/.codex/sessions/YYYY/MM/DD/rollout-example.jsonl
 slod ledger rebuild
 slod summary --file .slod/runs/run-<session>.slod
 ```
 
 Supported formats: `claude-code` (a Claude Code session transcript,
-newline-delimited JSON, as found under `~/.claude/projects/<project>/`).
-A `codex` format is on the roadmap.
+newline-delimited JSON, as found under `~/.claude/projects/<project>/`) and
+`codex` (a Codex CLI session rollout, newline-delimited JSON, as found under
+`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`).
 
 ## Behavior
 
@@ -27,7 +29,10 @@ A `codex` format is on the roadmap.
   `model.call`; `tool_use` blocks become `tool.call` (with the tool's primary
   argument surfaced as `command`); `tool_result` blocks become `tool.result`
   with `success = !is_error` and an error preview on failures; compaction
-  summaries are skipped and counted.
+  summaries are skipped and counted. Codex imports use `turn_context` for
+  `model.call`, map `response_item` function/custom/tool-search calls to
+  `tool.call`, pair their outputs as `tool.result` with both `success` and
+  `is_error`, and record explicit error-shaped rollout entries as `error`.
 - **Skimmability.** Strings embedded in payloads are capped at 400 characters
   with an explicit `…(+N chars)` marker; the original transcript remains the
   full-fidelity source.

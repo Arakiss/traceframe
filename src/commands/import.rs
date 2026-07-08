@@ -3,7 +3,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Result, bail};
-use slod::import::{parse_claude_code, write_trace};
+use slod::import::{parse_claude_code, parse_codex, write_trace};
 
 use super::print_action;
 
@@ -17,15 +17,16 @@ pub(crate) fn import(
     run_id: Option<&str>,
     force: bool,
 ) -> Result<()> {
-    if format != "claude-code" {
-        bail!("unsupported --format {format}; supported formats: claude-code");
-    }
     if file.is_some() && dir.is_some() {
         bail!("pass at most one of --file or --dir");
     }
 
     let source = source.unwrap_or(format);
-    let imported = parse_claude_code(input, run_id, source)?;
+    let imported = match format {
+        "claude-code" => parse_claude_code(input, run_id, source)?,
+        "codex" => parse_codex(input, run_id, source)?,
+        _ => bail!("unsupported --format {format}; supported formats: claude-code, codex"),
+    };
 
     let target: PathBuf = match file {
         Some(file) => file.to_path_buf(),

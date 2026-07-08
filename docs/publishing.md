@@ -10,6 +10,8 @@ crates.io publication is deliberate instead of cosmetic.
 - Domain reserved for future site: <https://slod.dev>
 - Install path today: `cargo install --path .`
 - Tagged releases: signed binaries + SBOM attached to each GitHub release.
+- GitHub maintenance gates: CI, scheduled RustSec audit, OpenSSF Scorecard,
+  Dependabot for Cargo and GitHub Actions.
 - Package name reserved locally: `slod` (not yet claimed on crates.io).
 
 ## Release Flow
@@ -51,8 +53,8 @@ workflow until the name is claimed. When the gate above is satisfied:
 
 ```bash
 # Confirm the package contents and metadata first.
-cargo package --list
-cargo publish --dry-run
+cargo package --locked --list
+cargo publish --dry-run --locked
 
 # Publish (requires a crates.io token; no CI secret is configured for this).
 cargo publish
@@ -71,12 +73,12 @@ Or run the individual steps:
 
 ```bash
 cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
-cargo llvm-cov --workspace --all-targets --fail-under-lines 80
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
+cargo llvm-cov --workspace --all-targets --locked --fail-under-lines 80
 cargo deny check advisories bans licenses sources
-cargo package --list
-cargo package
+cargo package --locked --list
+cargo package --locked
 ```
 
 ## Release Notes Rule

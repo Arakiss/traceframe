@@ -5,6 +5,9 @@
 
 <p align="center">
   <a href="https://github.com/Arakiss/slod/actions/workflows/ci.yml"><img src="https://github.com/Arakiss/slod/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Arakiss/slod/actions/workflows/audit.yml"><img src="https://github.com/Arakiss/slod/actions/workflows/audit.yml/badge.svg" alt="Audit"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/Arakiss/slod"><img src="https://api.scorecard.dev/projects/github.com/Arakiss/slod/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://github.com/Arakiss/slod/releases"><img src="https://img.shields.io/github/v/release/Arakiss/slod?sort=semver&color=blue" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="Cargo.toml"><img src="https://img.shields.io/badge/rust-1.94%2B-orange.svg" alt="Rust 1.94+"></a>
   <a href="examples/agent-run.slod"><img src="https://img.shields.io/badge/trace-local%20file-blue.svg" alt="Trace local file"></a>
@@ -129,6 +132,7 @@ Backfill traces from transcripts your harness already wrote (see
 
 ```bash
 slod import --format claude-code --input session.jsonl
+slod import --format codex --input ~/.codex/sessions/YYYY/MM/DD/rollout-example.jsonl
 slod ledger rebuild
 ```
 
@@ -141,10 +145,13 @@ slod ledger rebuild
 slod ledger list
 slod ledger list --status failed
 slod ledger show --run-id run-demo
+slod ledger export --jsonl
 ```
 
 The ledger is a derived catalog, not a database and not a second source of
-truth. If it is stale or deleted, rebuild it from the trace files.
+truth. If it is stale or deleted, rebuild it from the trace files. Use
+`ledger export --jsonl` when a layer-4 consumer needs a stable machine-readable
+catalog instead of parsing the local ledger file directly.
 
 For host hooks, ingest the JSON payload from stdin instead of wrapping each
 command manually. Use `--dir` for per-session traces: slod derives the
@@ -298,18 +305,30 @@ Slod's CLI is designed for both humans and agents:
 Every public change should pass the same gate that CI runs:
 
 ```bash
-cargo fmt --check
-cargo clippy -- -D warnings
-cargo test
-cargo llvm-cov --workspace --all-targets --fail-under-lines 80
+just ci
+```
+
+That expands to:
+
+```bash
+cargo fmt --all --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
+cargo llvm-cov --workspace --all-targets --locked --fail-under-lines 80
+cargo deny check advisories bans licenses sources
+sh scripts/check-local-agent-files.sh
 sh scripts/check-release-readiness.sh
 sh scripts/host-smoke.sh
 sh scripts/hook-smoke.sh
+sh scripts/codex-omx-hook-smoke.sh
+sh scripts/evidence-gate-smoke.sh
 ```
 
-The 80% line-coverage threshold is intentionally modest for v0.1, but it is a
-floor, not a target. New command behavior should come with focused tests before
-it is treated as part of the tool.
+CI also runs the tests and smokes on Linux and macOS, performs a locked
+release build, runs a scheduled RustSec audit, and publishes an OpenSSF
+Scorecard signal. The 80% line-coverage threshold is intentionally modest for
+v0.1, but it is a floor, not a target. New command behavior should come with
+focused tests before it is treated as part of the tool.
 
 `scripts/host-smoke.sh` is the deeper dogfood path. It creates real success,
 failed, manual, and open traces in a temporary workspace, renders HTML, rebuilds
