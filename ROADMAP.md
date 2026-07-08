@@ -14,8 +14,8 @@ storms, protocol violations, invented file paths). Its needs drive v0.2.
 
 ## v0.2 — feed the miners
 
-- **Transcript importer.** ✅ landed for `claude-code` (`docs/import.md`); `codex` format pending. `slod import --format claude-code --input <session.jsonl>`
-  (and `--format codex`): backfill traces from harness-native session
+- **Transcript importer.** ✅ landed for `claude-code` and `codex` (`docs/import.md`). `slod import --format claude-code --input <session.jsonl>`
+  (or `--format codex`): backfill traces from harness-native session
   transcripts, mapping messages to `model.call`, `tool.call`, `tool.result`
   (with `is_error`), and `run.finished`. Hooks capture the future; the importer
   captures the past. Idempotent, append-only, safe to re-run.

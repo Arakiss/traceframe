@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slod - Estado de entrega v0.2</title>
+<style>
+  :root {
+    --bg: #101414;
+    --bg-soft: #161c1b;
+    --bg-card: #1b2321;
+    --bg-card-2: #202a27;
+    --line: #2c3a36;
+    --line-soft: #23302d;
+    --ink: #edf4f0;
+    --ink-dim: #b4c2bb;
+    --ink-faint: #768780;
+    --accent: #58b7a2;
+    --accent-soft: #79cbbb;
+    --accent-deep: #3e8f7d;
+    --accent-rgb: 88,183,162;
+    --blue-rgb: 112,146,190;
+    --clay: var(--accent);
+    --clay-soft: var(--accent-soft);
+    --clay-deep: var(--accent-deep);
+    --green: #8fcf8a;
+    --amber: #dfb85f;
+    --red: #d96f6f;
+    --blue: #76a4d8;
+    --violet: #a991d0;
+    --radius: 14px;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--ink);
+    background:
+      radial-gradient(900px 520px at 82% -12%, rgba(var(--accent-rgb), .11), transparent 60%),
+      radial-gradient(760px 560px at -12% 12%, rgba(var(--blue-rgb), .06), transparent 56%),
+      var(--bg);
+    line-height: 1.62;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 56px 24px 88px; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--bg-soft);
+    padding: 6px 13px;
+    margin-bottom: 22px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 999px; background: currentColor; box-shadow: 0 0 12px currentColor; }
+  h1 { margin: 0 0 16px; font-size: clamp(32px, 5vw, 50px); line-height: 1.06; letter-spacing: -.02em; }
+  h1 span { color: var(--accent); }
+  .lede { max-width: 760px; color: var(--ink-dim); font-size: 18px; margin: 0 0 24px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    background: var(--bg-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    padding: 5px 11px;
+  }
+  .chip b { color: var(--ink-dim); font-weight: 600; }
+  .summary {
+    border: 1px solid rgba(var(--accent-rgb), .28);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(var(--accent-rgb), .09), rgba(var(--accent-rgb), .025));
+    padding: 18px 20px;
+    margin: 0 0 26px;
+  }
+  .summary strong { color: var(--ink); }
+  .summary p { margin: 0; color: var(--ink-dim); }
+  .summary p + p { margin-top: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0 34px; }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat { font-family: var(--mono); color: var(--accent); font-size: 27px; font-weight: 700; letter-spacing: -.02em; }
+  .label { color: var(--ink-faint); font-size: 12.5px; margin-top: 4px; }
+  section { border-top: 1px solid var(--line-soft); padding: 28px 0; }
+  .chap { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  h2 { margin: 0 0 8px; font-size: 23px; letter-spacing: -.01em; }
+  p { color: var(--ink-dim); margin: 0 0 14px; }
+  code { font-family: var(--mono); font-size: .9em; color: var(--accent-soft); background: var(--bg-soft); border: 1px solid var(--line-soft); border-radius: 5px; padding: 1px 6px; }
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line-soft); border-radius: 12px; margin-top: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    color: var(--ink-faint);
+    background: var(--bg-soft);
+    font-size: 11px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  td { color: var(--ink-dim); padding: 12px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { color: var(--ink); font-weight: 600; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    border-radius: 6px;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+  .ok { color: var(--green); background: rgba(143,207,138, .12); border: 1px solid rgba(143,207,138, .3); }
+  .warn { color: var(--amber); background: rgba(223,184,95, .12); border: 1px solid rgba(223,184,95, .3); }
+  ul { list-style: none; padding: 0; margin: 12px 0 0; }
+  li { position: relative; padding: 8px 0 8px 24px; color: var(--ink-dim); border-bottom: 1px solid var(--line-soft); }
+  li:last-child { border-bottom: 0; }
+  li::before { content: "›"; position: absolute; left: 4px; color: var(--accent); font-family: var(--mono); }
+  li strong { color: var(--ink); }
+  footer { border-top: 1px solid var(--line-soft); margin-top: 30px; padding-top: 18px; font-family: var(--mono); color: var(--ink-faint); font-size: 11px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .wrap { padding-top: 38px; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } html { scroll-behavior: auto; } }
+  @media print {
+    :root { --bg: #fff; --bg-soft: #f3f5f2; --bg-card: #fff; --line: #c8d0ca; --line-soft: #dbe2dd; --ink: #17201d; --ink-dim: #39443f; --ink-faint: #69766f; }
+    body { background: #fff; }
+    .card, .summary, .tbl-wrap { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow"><span class="dot"></span>Estado de entrega · 2026-07-08</div>
+    <h1>Slod ya convierte rollouts de <span>Codex</span></h1>
+    <p class="lede">Este hub recoge el cierre operativo de la entrega v0.2: importador de Codex, exportación JSONL del ledger, pruebas, una prueba real con sesión local y matices que quedan fuera de esta rama.</p>
+    <div class="meta">
+      <span class="chip"><b>Rama</b> · feat/codex-importer</span>
+      <span class="chip"><b>Alcance</b> · importador Codex + ledger export</span>
+      <span class="chip"><b>Estado</b> · implementado y validado</span>
+    </div>
+  </header>
+
+  <div class="summary">
+    <p><strong>Qué significa:</strong> `slod import` puede convertir rollouts JSONL de Codex en trazas `.slod` cerradas y verificables, y `slod ledger export --jsonl` da a los consumidores una salida estable para catalogar ejecuciones.</p>
+    <p><strong>Qué no hace:</strong> no analiza ni puntúa sesiones; se limita a dejar el rastro ordenado para que las herramientas de capa 4 lo lean después.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="stat">84</div><div class="label">tests de `cargo test` pasados</div></div>
+    <div class="card"><div class="stat">262</div><div class="label">eventos en la prueba real</div></div>
+    <div class="card"><div class="stat">89,51%</div><div class="label">cobertura de líneas</div></div>
+  </div>
+
+  <section>
+    <div class="chap">Cerrado</div>
+    <h2>Comportamiento implementado</h2>
+    <ul>
+      <li><strong>Nuevo formato.</strong> `slod import --format codex` lee rollouts JSONL de `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`.</li>
+      <li><strong>Mapeo de eventos.</strong> `turn_context` produce `model.call`; `response_item` produce `tool.call` y `tool.result`; errores explícitos producen `error`.</li>
+      <li><strong>Reejecución segura.</strong> La importación no añade duplicados sobre un destino existente; sin `--force`, se rechaza el fichero ya creado.</li>
+      <li><strong>Timestamps.</strong> `run.started` y `run.finished` usan el mínimo y máximo timestamp del rollout, no la primera y última línea del fichero.</li>
+      <li><strong>Salida para consumidores.</strong> `slod ledger export --jsonl` emite entradas listas para leer como JSONL sin obligar a tocar el fichero interno del ledger.</li>
+      <li><strong>Comprobación reparada.</strong> `just ci` queda como alias de `check`, y el check de archivos privados deja de bloquear el `AGENTS.md` público del repo.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="chap">Evidencia</div>
+    <h2>Comprobaciones ejecutadas</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Comprobación</th><th>Resultado</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td>cargo fmt --all --check</td><td><span class="badge ok">ok</span></td><td>Formato estable.</td></tr>
+          <tr><td>cargo clippy --all-targets -- -D warnings</td><td><span class="badge ok">ok</span></td><td>Sin warnings.</td></tr>
+          <tr><td>cargo test</td><td><span class="badge ok">84/84</span></td><td>Incluye 6 tests de importación.</td></tr>
+          <tr><td>cargo llvm-cov --workspace --all-targets --fail-under-lines 80</td><td><span class="badge ok">89,51%</span></td><td>Ejecutado con `LLVM_COV` y `LLVM_PROFDATA` de Xcode.</td></tr>
+          <tr><td>cargo deny check advisories bans licenses sources</td><td><span class="badge ok">ok</span></td><td>Pasa con avisos ya conocidos de licencias permitidas no usadas y duplicado indirecto de `wit-bindgen`.</td></tr>
+          <tr><td>private-files, release-readiness y smokes</td><td><span class="badge ok">ok</span></td><td>`host-smoke`, `hook-smoke` y `evidence-gate-smoke` pasados.</td></tr>
+          <tr><td>Prueba real con Codex</td><td><span class="badge ok">ok</span></td><td>262 eventos, 1 llamada de modelo, 130 llamadas de herramienta, 129 resultados, 10 fallos; traza verificada y ledger exportado.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="chap">Matices</div>
+    <h2>Lo que queda fuera de esta rama</h2>
+    <ul>
+      <li><strong>Sin `run.meta`.</strong> La entrega no añade un nuevo tipo de evento; conserva la forma actual y deja los metadatos ampliados para otro punto del roadmap.</li>
+      <li><strong>Sin análisis de contenido.</strong> No hay minería de decisiones, puntuación ni revisión de sesiones; eso sigue perteneciendo a consumidores externos.</li>
+      <li><strong>`just ci` no se pudo ejecutar tal cual.</strong> `just` no está instalado en esta máquina; los pasos de la comprobación se ejecutaron a mano. La cobertura necesitó apuntar a las herramientas LLVM de Xcode.</li>
+    </ul>
+  </section>
+
+  <footer>Hub local de estado · 1 archivo · 0 dependencias · 2026-07-08.</footer>
+</main>
+</body>
+</html>

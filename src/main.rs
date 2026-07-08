@@ -91,7 +91,7 @@ enum Command {
     /// run id is derived from the transcript session when `--run-id` is
     /// omitted.
     Import {
-        /// Transcript format. Supported: claude-code.
+        /// Transcript format. Supported: claude-code, codex.
         #[arg(long)]
         format: String,
         /// Transcript file (newline-delimited JSON).
