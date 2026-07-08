@@ -179,7 +179,7 @@
       <li><strong>Timestamps.</strong> `run.started` y `run.finished` usan el mínimo y máximo timestamp del rollout, no la primera y última línea del fichero.</li>
       <li><strong>Salida para consumidores.</strong> `slod ledger export --jsonl` emite entradas listas para leer como JSONL sin obligar a tocar el fichero interno del ledger.</li>
       <li><strong>Comprobación reparada.</strong> `just ci` queda como alias de `check`, y el check de archivos privados deja de bloquear el `AGENTS.md` público del repo.</li>
-      <li><strong>CI de calidad OSS.</strong> GitHub Actions separa formato, clippy, tests Linux/macOS, cobertura, release readiness, smokes, `cargo-deny` y el resumen `rust`.</li>
+      <li><strong>CI de calidad OSS.</strong> GitHub Actions separa formato, clippy, tests Linux/macOS, cobertura, release readiness, smokes, `cargo-deny`, evidence gate manual y el resumen `rust`.</li>
       <li><strong>Mantenimiento continuo.</strong> Añadidos `audit.yml`, `scorecard.yml` y Dependabot semanal para Cargo y GitHub Actions; `release-please` dispara CI/audit sobre su PR generada.</li>
       <li><strong>Supply-chain más silencioso.</strong> `deny.toml` queda sin avisos: licencias permitidas ajustadas a lo usado y excepción documentada para el duplicado transitorio de `wit-bindgen`.</li>
     </ul>
