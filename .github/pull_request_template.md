@@ -11,11 +11,7 @@
 ## Testing
 
 ```bash
-cargo fmt --check
-cargo clippy -- -D warnings
-cargo test
-cargo llvm-cov --workspace --all-targets --fail-under-lines 80
-sh scripts/check-release-readiness.sh
+just ci
 ```
 
 ## Notes

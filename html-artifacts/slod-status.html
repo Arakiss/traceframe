@@ -149,23 +149,23 @@
 <main class="wrap">
   <header>
     <div class="eyebrow"><span class="dot"></span>Estado de entrega · 2026-07-08</div>
-    <h1>Slod ya convierte rollouts de <span>Codex</span></h1>
-    <p class="lede">Este hub recoge el cierre operativo de la entrega v0.2: importador de Codex, exportación JSONL del ledger, pruebas, una prueba real con sesión local y matices que quedan fuera de esta rama.</p>
+    <h1>Slod ya convierte rollouts de <span>Codex</span> y sube su CI</h1>
+    <p class="lede">Este hub recoge el cierre operativo de la entrega v0.2 y el refuerzo de mantenimiento OSS: importador de Codex, exportación JSONL del ledger, CI con matriz Linux/macOS, auditoría de dependencias, Scorecard y Dependabot.</p>
     <div class="meta">
       <span class="chip"><b>Rama</b> · feat/codex-importer</span>
-      <span class="chip"><b>Alcance</b> · importador Codex + ledger export</span>
+      <span class="chip"><b>Alcance</b> · importador Codex + ledger export + CI OSS</span>
       <span class="chip"><b>Estado</b> · implementado y validado</span>
     </div>
   </header>
 
   <div class="summary">
     <p><strong>Qué significa:</strong> `slod import` puede convertir rollouts JSONL de Codex en trazas `.slod` cerradas y verificables, y `slod ledger export --jsonl` da a los consumidores una salida estable para catalogar ejecuciones.</p>
-    <p><strong>Qué no hace:</strong> no analiza ni puntúa sesiones; se limita a dejar el rastro ordenado para que las herramientas de capa 4 lo lean después.</p>
+    <p><strong>Qué cambia en mantenimiento:</strong> el CI deja de ser un job largo y pasa a tener trabajos legibles: formato, clippy, tests, cobertura, paquete, smokes, `cargo-deny`, auditoría programada, Scorecard y dependencias automáticas.</p>
   </div>
 
   <div class="grid">
     <div class="card"><div class="stat">84</div><div class="label">tests de `cargo test` pasados</div></div>
-    <div class="card"><div class="stat">262</div><div class="label">eventos en la prueba real</div></div>
+    <div class="card"><div class="stat">2</div><div class="label">plataformas en tests y smokes</div></div>
     <div class="card"><div class="stat">89,51%</div><div class="label">cobertura de líneas</div></div>
   </div>
 
@@ -179,6 +179,9 @@
       <li><strong>Timestamps.</strong> `run.started` y `run.finished` usan el mínimo y máximo timestamp del rollout, no la primera y última línea del fichero.</li>
       <li><strong>Salida para consumidores.</strong> `slod ledger export --jsonl` emite entradas listas para leer como JSONL sin obligar a tocar el fichero interno del ledger.</li>
       <li><strong>Comprobación reparada.</strong> `just ci` queda como alias de `check`, y el check de archivos privados deja de bloquear el `AGENTS.md` público del repo.</li>
+      <li><strong>CI de calidad OSS.</strong> GitHub Actions separa formato, clippy, tests Linux/macOS, cobertura, release readiness, smokes, `cargo-deny` y el resumen `rust`.</li>
+      <li><strong>Mantenimiento continuo.</strong> Añadidos `audit.yml`, `scorecard.yml` y Dependabot semanal para Cargo y GitHub Actions; `release-please` dispara CI/audit sobre su PR generada.</li>
+      <li><strong>Supply-chain más silencioso.</strong> `deny.toml` queda sin avisos: licencias permitidas ajustadas a lo usado y excepción documentada para el duplicado transitorio de `wit-bindgen`.</li>
     </ul>
   </section>
 
@@ -190,11 +193,13 @@
         <thead><tr><th>Comprobación</th><th>Resultado</th><th>Nota</th></tr></thead>
         <tbody>
           <tr><td>cargo fmt --all --check</td><td><span class="badge ok">ok</span></td><td>Formato estable.</td></tr>
-          <tr><td>cargo clippy --all-targets -- -D warnings</td><td><span class="badge ok">ok</span></td><td>Sin warnings.</td></tr>
-          <tr><td>cargo test</td><td><span class="badge ok">84/84</span></td><td>Incluye 6 tests de importación.</td></tr>
-          <tr><td>cargo llvm-cov --workspace --all-targets --fail-under-lines 80</td><td><span class="badge ok">89,51%</span></td><td>Ejecutado con `LLVM_COV` y `LLVM_PROFDATA` de Xcode.</td></tr>
-          <tr><td>cargo deny check advisories bans licenses sources</td><td><span class="badge ok">ok</span></td><td>Pasa con avisos ya conocidos de licencias permitidas no usadas y duplicado indirecto de `wit-bindgen`.</td></tr>
-          <tr><td>private-files, release-readiness y smokes</td><td><span class="badge ok">ok</span></td><td>`host-smoke`, `hook-smoke` y `evidence-gate-smoke` pasados.</td></tr>
+          <tr><td>cargo clippy --locked --all-targets -- -D warnings</td><td><span class="badge ok">ok</span></td><td>Sin warnings.</td></tr>
+          <tr><td>cargo test --locked</td><td><span class="badge ok">84/84</span></td><td>Incluye 6 tests de importación.</td></tr>
+          <tr><td>cargo llvm-cov --workspace --all-targets --locked --fail-under-lines 80</td><td><span class="badge ok">89,51%</span></td><td>Primer intento sin `llvm-tools-preview`; repetido con `LLVM_COV` y `LLVM_PROFDATA` de Xcode.</td></tr>
+          <tr><td>cargo deny check advisories bans licenses sources</td><td><span class="badge ok">ok</span></td><td>Pasa sin avisos tras ajustar `deny.toml`.</td></tr>
+          <tr><td>private-files, release-readiness y smokes</td><td><span class="badge ok">ok</span></td><td>`host-smoke`, `hook-smoke`, `codex-omx-hook-smoke` y `evidence-gate-smoke` pasados.</td></tr>
+          <tr><td>cargo build --release --locked</td><td><span class="badge ok">ok</span></td><td>Validación local del nuevo job de release readiness.</td></tr>
+          <tr><td>YAML + diff</td><td><span class="badge ok">ok</span></td><td>Workflows parseados con Ruby YAML; `git diff --check` limpio. `actionlint` no está instalado en esta máquina.</td></tr>
           <tr><td>Prueba real con Codex</td><td><span class="badge ok">ok</span></td><td>262 eventos, 1 llamada de modelo, 130 llamadas de herramienta, 129 resultados, 10 fallos; traza verificada y ledger exportado.</td></tr>
         </tbody>
       </table>
@@ -208,6 +213,7 @@
       <li><strong>Sin `run.meta`.</strong> La entrega no añade un nuevo tipo de evento; conserva la forma actual y deja los metadatos ampliados para otro punto del roadmap.</li>
       <li><strong>Sin análisis de contenido.</strong> No hay minería de decisiones, puntuación ni revisión de sesiones; eso sigue perteneciendo a consumidores externos.</li>
       <li><strong>`just ci` no se pudo ejecutar tal cual.</strong> `just` no está instalado en esta máquina; los pasos de la comprobación se ejecutaron a mano. La cobertura necesitó apuntar a las herramientas LLVM de Xcode.</li>
+      <li><strong>CI remoto pendiente.</strong> Los workflows nuevos todavía tienen que correr en GitHub cuando se suba esta rama; localmente se validó sintaxis YAML y los comandos que ejecutan.</li>
     </ul>
   </section>
 

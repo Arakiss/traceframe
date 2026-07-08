@@ -45,6 +45,47 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger release PR checks
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
+          RELEASE_PRS: ${{ steps.release.outputs.prs }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pr_branch="$(
+            node <<'NODE'
+          const single = process.env.RELEASE_PR || "";
+          const many = process.env.RELEASE_PRS || "";
+          const prs = [];
+          if (single) prs.push(JSON.parse(single));
+          if (many) prs.push(...JSON.parse(many));
+          const pr = prs.find((item) => item && (item.number || item.id));
+          if (!pr) process.exit(0);
+          console.log(
+            pr.headRefName ||
+            pr.headBranchName ||
+            pr.branch ||
+            pr.head?.ref ||
+            ""
+          );
+          NODE
+          )"
+
+          if [[ -z "${pr_branch}" ]]; then
+            echo "::warning::Release PR branch could not be resolved; skipping check dispatch."
+            exit 0
+          fi
+
+          for workflow in ci.yml audit.yml; do
+            gh workflow run "${workflow}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --ref "${pr_branch}"
+          done
+
       - name: Trigger binary build
         # Use the aggregate output for the condition (always present, regardless
         # of how release-please prefixes per-package outputs), then resolve the

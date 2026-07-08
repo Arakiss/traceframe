@@ -29,12 +29,22 @@ private-files guard, release readiness, and the smokes — the same gates CI
 enforces. The individual steps are also available without `just`:
 
 ```bash
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
-cargo llvm-cov --workspace --all-targets --fail-under-lines 80
+cargo fmt --all --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
+cargo llvm-cov --workspace --all-targets --locked --fail-under-lines 80
 cargo deny check advisories bans licenses sources
+sh scripts/check-local-agent-files.sh
+sh scripts/check-release-readiness.sh
+sh scripts/host-smoke.sh
+sh scripts/hook-smoke.sh
+sh scripts/codex-omx-hook-smoke.sh
+sh scripts/evidence-gate-smoke.sh
 ```
+
+GitHub CI also runs tests and smokes on Linux and macOS, performs a locked
+release build, runs a scheduled RustSec audit, and publishes an OpenSSF
+Scorecard signal for the public repository.
 
 For changes that affect day-to-day usage, also dogfood Slod against
 itself:

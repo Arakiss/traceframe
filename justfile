@@ -29,15 +29,15 @@ fmt-fix:
 
 # Clippy with -D warnings across all targets.
 clippy:
-    cargo clippy --all-targets -- -D warnings
+    cargo clippy --locked --all-targets -- -D warnings
 
 # Test suite.
 test:
-    cargo test
+    cargo test --locked
 
 # Line coverage with an 80% floor (matches CI).
 coverage:
-    cargo llvm-cov --workspace --all-targets --fail-under-lines 80
+    cargo llvm-cov --workspace --all-targets --locked --fail-under-lines 80
 
 # cargo-deny: advisories, bans, licenses, sources.
 deny:
@@ -55,11 +55,12 @@ release-readiness:
 smoke:
     sh scripts/host-smoke.sh
     sh scripts/hook-smoke.sh
+    sh scripts/codex-omx-hook-smoke.sh
     sh scripts/evidence-gate-smoke.sh
 
 # Release-profile build of the binary.
 release-build:
-    cargo build --release
+    cargo build --release --locked
 
 # Remove all build artefacts.
 clean:

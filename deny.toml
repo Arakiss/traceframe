@@ -19,7 +19,9 @@ highlight = "all"
 deny = [
     # Place any hard-banned crates here (e.g. ones with CVEs we can't ignore).
 ]
-skip = []
+skip = [
+    { crate = "wit-bindgen@0.51.0", reason = "WASI target support from getrandom pulls two wit-bindgen lines through uuid/tempfile." },
+]
 skip-tree = []
 
 [licenses]
@@ -29,14 +31,7 @@ allow = [
     "MIT",
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
-    "BSD-2-Clause",
-    "BSD-3-Clause",
-    "ISC",
     "Unicode-3.0",
-    "Unicode-DFS-2016",
-    "CC0-1.0",
-    "Zlib",
-    "MPL-2.0",
 ]
 confidence-threshold = 0.92
 exceptions = []
