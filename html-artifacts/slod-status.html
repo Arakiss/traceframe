@@ -182,6 +182,7 @@
       <li><strong>Comprobación reparada.</strong> `just ci` queda como alias de `check`, y el check de archivos privados deja de bloquear el `AGENTS.md` público del repo.</li>
       <li><strong>CI de calidad OSS.</strong> GitHub Actions separa formato, clippy, tests Linux/macOS, cobertura, release readiness, smokes, `cargo-deny`, evidence gate manual y el resumen `rust`.</li>
       <li><strong>Mantenimiento continuo.</strong> Añadidos `audit.yml`, `scorecard.yml` y Dependabot semanal para Cargo y GitHub Actions; `release-please` dispara CI/audit sobre su PR generada.</li>
+      <li><strong>Cadencia pre-1.0.</strong> `release-please` queda configurado para no saltar a `1.0.0` por breaking changes mientras Slod siga en fase pre-1.0; el siguiente release esperado es `0.2.0`.</li>
       <li><strong>Supply-chain más silencioso.</strong> `deny.toml` queda sin avisos: licencias permitidas ajustadas a lo usado y excepción documentada para el duplicado transitorio de `wit-bindgen`.</li>
     </ul>
   </section>
@@ -202,6 +203,7 @@
           <tr><td>cargo build --release --locked</td><td><span class="badge ok">ok</span></td><td>Validación local del nuevo job de release readiness.</td></tr>
           <tr><td>YAML + diff</td><td><span class="badge ok">ok</span></td><td>Workflows parseados con Ruby YAML; `git diff --check` limpio. `actionlint` no está instalado en esta máquina.</td></tr>
           <tr><td>PR #6 · checks remotos</td><td><span class="badge ok">verde</span></td><td>`CI`, `Evidence gate` y `audit` pasaron en GitHub sobre `50ff4fc`.</td></tr>
+          <tr><td>Main · checks remotos</td><td><span class="badge ok">verde</span></td><td>`CI`, `Evidence gate`, `audit`, `release`, `scorecard` y Dependabot pasaron en GitHub sobre `7cc1e20`.</td></tr>
           <tr><td>Prueba real con Codex</td><td><span class="badge ok">ok</span></td><td>262 eventos, 1 llamada de modelo, 130 llamadas de herramienta, 129 resultados, 10 fallos; traza verificada y ledger exportado.</td></tr>
         </tbody>
       </table>

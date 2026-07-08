@@ -20,7 +20,9 @@
   ],
   "packages": {
     ".": {
-      "package-name": "slod"
+      "package-name": "slod",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
     }
   }
 }
