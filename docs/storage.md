@@ -16,6 +16,7 @@ Recommended local layout:
 .slod/
   runs/
     run-2026-05-03T09-00-00Z.slod
+    run-2026-05-03T09-00-00Z.slod.lock
   ledger.slod
   reports/
     run-2026-05-03T09-00-00Z.html
@@ -25,6 +26,32 @@ Most commands accept an explicit `--file` path. That keeps v0.1 simple and lets
 agents decide where a trace belongs. For one-command dogfooding, `slod run`
 can also create a default trace under `.slod/runs/` when `--file` is not
 provided.
+
+## Concurrent access and lock sidecars
+
+Each trace has a sibling coordination file named `<trace>.lock`. Slod may leave
+this empty sidecar in place between commands; it is not part of the trace and
+does not change the JSONL event format. The ledger only scans files whose
+extension is exactly `.slod`, so lock sidecars are never indexed as runs.
+
+Slod uses operating-system file locks on the sidecar:
+
+- Writers acquire an exclusive lock before deciding whether a trace must be
+  initialized. The same lock covers the complete trace read, open-run check,
+  next sequence calculation, and append of one serialized JSON event plus its
+  newline. A hook payload that maps to multiple events keeps one exclusive lock
+  for the full ingest operation.
+- Readers acquire a shared lock for the complete file read used by `verify`,
+  `summary`, `inspect`, rendering, policy checks, and ledger rebuilds. Multiple
+  readers may proceed together, but they wait for an active writer and cannot
+  observe its partial append.
+- Locks are released when their file handles are dropped, including after an
+  error or process exit. The sidecar itself may persist and can be recreated; a
+  copied trace does not need its old lock file.
+
+These locks are advisory. Programs that write `.slod` files directly must use
+the same sidecar convention to coordinate with Slod. Read-only tools such as
+`cat` do not take the lock and may still observe an append in progress.
 
 ## Why line-delimited JSON first
 
@@ -169,7 +196,7 @@ Cons:
 
 - slow search across many runs;
 - no indexes;
-- weak multi-writer story;
+- local multi-writer coordination relies on advisory sidecar locks;
 - validation happens at read/verify time;
 - large traces may need compression later.
 

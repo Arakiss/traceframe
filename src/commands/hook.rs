@@ -57,24 +57,30 @@ pub(crate) fn ingest(
         (None, None) => bail!("pass exactly one of --file or --dir"),
     };
 
-    if !trace_file.exists() {
-        if !create_if_missing {
-            bail!(
-                "trace does not exist: {}; pass --init-if-missing to create it (or use --dir)",
-                trace_file.display()
-            );
-        }
-        Trace::init(&trace_file, &effective_run_id, false)?;
-    }
-
-    let mut recorded = Vec::with_capacity(events.len());
-    for event in events {
+    for event in &events {
         if matches!(event.kind, EventKind::RunStarted | EventKind::RunFinished) {
             bail!("hook ingest cannot create lifecycle events directly");
         }
-        let event = Trace::append(&trace_file, event.kind, event.payload)?;
-        recorded.push(format!("{}#{}", event.kind, event.seq));
     }
+
+    let recorded = Trace::with_exclusive(&trace_file, |trace| {
+        if !trace.exists() {
+            if !create_if_missing {
+                bail!(
+                    "trace does not exist: {}; pass --init-if-missing to create it (or use --dir)",
+                    trace_file.display()
+                );
+            }
+            trace.init(&effective_run_id, false)?;
+        }
+
+        let mut recorded = Vec::with_capacity(events.len());
+        for event in events {
+            let event = trace.append(event.kind, event.payload)?;
+            recorded.push(format!("{}#{}", event.kind, event.seq));
+        }
+        Ok(recorded)
+    })?;
 
     print_action(
         "hook ingest",

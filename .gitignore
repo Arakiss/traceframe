@@ -1,5 +1,6 @@
 /target
 .slod/
+*.slod.lock
 # Legacy local trace data from before the traceframe -> slod rename.
 .traceframe/
 

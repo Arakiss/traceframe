@@ -1,6 +1,15 @@
-use std::fs;
+use std::{
+    collections::BTreeSet,
+    fs,
+    io::Write,
+    path::Path,
+    process::{Command as StdCommand, Stdio},
+    sync::{Arc, Barrier},
+    thread,
+};
 
 use predicates::prelude::*;
+use slod::trace::{Event, EventKind};
 use tempfile::tempdir;
 
 mod common;
@@ -390,6 +399,109 @@ fn hook_ingest_dir_separates_sessions_and_appends_same_session() {
 }
 
 #[test]
+fn hook_ingest_serializes_concurrent_creation_and_existing_trace_appends() {
+    const CONCURRENT_INGESTS: usize = 24;
+
+    let dir = tempdir().unwrap();
+    let runs = dir.path().join("runs");
+    let trace_path = runs.join("run-concurrent-session.slod");
+
+    let call_payloads = (0..CONCURRENT_INGESTS)
+        .map(|index| {
+            format!(
+                r#"{{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{{"command":"command-{index}"}},"session_id":"concurrent-session"}}"#
+            )
+        })
+        .collect();
+    run_concurrent_hook_ingests(&runs, call_payloads);
+
+    slod()
+        .args(["verify", "--allow-open", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success();
+
+    let result_payloads = (0..CONCURRENT_INGESTS)
+        .map(|index| {
+            format!(
+                r#"{{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{{"command":"command-{index}"}},"tool_response":{{"success":true,"exit_code":0}},"session_id":"concurrent-session"}}"#
+            )
+        })
+        .collect();
+    run_concurrent_hook_ingests(&runs, result_payloads);
+
+    slod()
+        .args(["finish", "--file"])
+        .arg(&trace_path)
+        .args(["--status", "success"])
+        .assert()
+        .success();
+    slod()
+        .args(["verify", "--file"])
+        .arg(&trace_path)
+        .assert()
+        .success();
+
+    let content = fs::read_to_string(&trace_path).unwrap();
+    assert!(
+        content.ends_with('\n'),
+        "trace must remain newline terminated"
+    );
+    let events = content
+        .lines()
+        .map(|line| serde_json::from_str::<Event>(line).expect("every JSONL row must be valid"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        events.len(),
+        2 * CONCURRENT_INGESTS + 2,
+        "run.started + calls + results + run.finished"
+    );
+    assert_eq!(
+        events
+            .iter()
+            .filter(|event| event.kind == EventKind::RunStarted)
+            .count(),
+        1
+    );
+    assert_eq!(
+        events
+            .iter()
+            .filter(|event| event.kind == EventKind::RunFinished)
+            .count(),
+        1
+    );
+    assert_eq!(
+        events.iter().map(|event| event.seq).collect::<Vec<_>>(),
+        (0..events.len() as u64).collect::<Vec<_>>(),
+        "sequence numbers must be unique and contiguous"
+    );
+
+    let expected_commands = (0..CONCURRENT_INGESTS)
+        .map(|index| format!("command-{index}"))
+        .collect::<BTreeSet<_>>();
+    for kind in [EventKind::ToolCall, EventKind::ToolResult] {
+        let actual_commands = events
+            .iter()
+            .filter(|event| event.kind == kind)
+            .filter_map(|event| {
+                event
+                    .payload
+                    .get("command")
+                    .and_then(|value| value.as_str())
+            })
+            .map(str::to_string)
+            .collect::<BTreeSet<_>>();
+        assert_eq!(actual_commands, expected_commands, "missing {kind} events");
+    }
+
+    assert!(
+        trace_path.with_extension("slod.lock").exists(),
+        "the persistent sidecar lock should live beside the trace"
+    );
+}
+
+#[test]
 fn hook_ingest_dir_uses_deterministic_fallback_without_session_id() {
     let dir = tempdir().unwrap();
     let runs = dir.path().join("runs");
@@ -408,6 +520,7 @@ fn hook_ingest_dir_uses_deterministic_fallback_without_session_id() {
     let entries: Vec<_> = fs::read_dir(&runs)
         .unwrap()
         .map(|e| e.unwrap().file_name().to_string_lossy().to_string())
+        .filter(|name| name.ends_with(".slod"))
         .collect();
     assert_eq!(
         entries.len(),
@@ -416,6 +529,51 @@ fn hook_ingest_dir_uses_deterministic_fallback_without_session_id() {
     );
     assert!(entries[0].starts_with("run-"));
     assert!(entries[0].ends_with(".slod"));
+}
+
+fn run_concurrent_hook_ingests(runs: &Path, payloads: Vec<String>) {
+    assert!(!payloads.is_empty());
+
+    let mut children = Vec::with_capacity(payloads.len());
+    for payload in payloads {
+        let mut child = StdCommand::new(env!("CARGO_BIN_EXE_slod"))
+            .args(["hook", "ingest", "--source", "generic", "--dir"])
+            .arg(runs)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn concurrent slod hook ingest");
+        let stdin = child.stdin.take().expect("child stdin");
+        children.push((child, stdin, payload));
+    }
+
+    let barrier = Arc::new(Barrier::new(children.len()));
+    let workers = children
+        .into_iter()
+        .map(|(child, mut stdin, payload)| {
+            let barrier = Arc::clone(&barrier);
+            thread::spawn(move || {
+                barrier.wait();
+                stdin
+                    .write_all(payload.as_bytes())
+                    .expect("write hook payload");
+                drop(stdin);
+
+                let output = child.wait_with_output().expect("wait for hook ingest");
+                assert!(
+                    output.status.success(),
+                    "hook ingest failed\nstdout: {}\nstderr: {}",
+                    String::from_utf8_lossy(&output.stdout),
+                    String::from_utf8_lossy(&output.stderr)
+                );
+            })
+        })
+        .collect::<Vec<_>>();
+
+    for worker in workers {
+        worker.join().expect("hook ingest worker panicked");
+    }
 }
 
 #[test]

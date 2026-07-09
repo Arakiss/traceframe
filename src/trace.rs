@@ -1,7 +1,7 @@
 use std::{
     fmt,
-    fs::{self, OpenOptions},
-    io::Write,
+    fs::{self, File, OpenOptions},
+    io::{Read, Seek, Write},
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -105,6 +105,16 @@ impl Event {
 #[derive(Debug, Clone)]
 pub struct Trace {
     pub events: Vec<Event>,
+}
+
+/// An exclusively locked trace file.
+///
+/// Instances are created by [`Trace::with_exclusive`]. The sidecar lock stays
+/// held for the lifetime of this value, allowing callers to group trace
+/// creation and multiple appends into one serialized operation.
+pub struct LockedTrace<'a> {
+    path: &'a Path,
+    _lock_file: File,
 }
 
 #[derive(Debug, Clone)]
@@ -216,59 +226,60 @@ impl TraceRecorder {
 }
 
 impl Trace {
+    /// Run an operation while holding the trace's exclusive sidecar lock.
+    ///
+    /// The lock file is named `<trace>.lock` and may persist after the
+    /// operation. Dropping the internal file handle releases the OS lock,
+    /// including when the operation returns an error.
+    pub fn with_exclusive<T>(
+        path: &Path,
+        operation: impl FnOnce(&LockedTrace<'_>) -> Result<T>,
+    ) -> Result<T> {
+        let lock_file = open_trace_lock(path)?;
+        lock_file
+            .lock()
+            .with_context(|| format!("failed to lock trace {}", path.display()))?;
+
+        operation(&LockedTrace {
+            path,
+            _lock_file: lock_file,
+        })
+    }
+
     pub fn init(path: &Path, run_id: &str, force: bool) -> Result<()> {
-        if path.exists() && path.metadata()?.len() > 0 && !force {
-            bail!("trace already exists: {}", path.display());
-        }
-
-        if let Some(parent) = path
-            .parent()
-            .filter(|parent| !parent.as_os_str().is_empty())
-        {
-            fs::create_dir_all(parent)
-                .with_context(|| format!("failed to create {}", parent.display()))?;
-        }
-
-        let mut payload = json!({"created_by":"slod","status":"started"});
-        if let Some(host) = crate::host::context() {
-            payload["host"] = host;
-        }
-        let event = Event::new(run_id, EventKind::RunStarted, 0, payload);
-        fs::write(path, format!("{}\n", serde_json::to_string(&event)?))
-            .with_context(|| format!("failed to write {}", path.display()))?;
-        Ok(())
+        Self::with_exclusive(path, |trace| trace.init(run_id, force))
     }
 
     pub fn append(path: &Path, kind: EventKind, payload: Value) -> Result<Event> {
-        let trace = Self::read(path)?;
-        if trace.events.is_empty() {
-            bail!("cannot append to empty trace: {}", path.display());
-        }
-        if trace
-            .events
-            .last()
-            .is_some_and(|e| e.kind == EventKind::RunFinished)
-        {
-            bail!("cannot append after run.finished");
-        }
-
-        let run_id = trace.events[0].run_id.clone();
-        let seq = trace.events.last().map_or(0, |event| event.seq + 1);
-        let event = Event::new(run_id, kind, seq, payload);
-
-        let mut file = OpenOptions::new()
-            .append(true)
-            .open(path)
-            .with_context(|| format!("failed to open {}", path.display()))?;
-        writeln!(file, "{}", serde_json::to_string(&event)?)
-            .with_context(|| format!("failed to append {}", path.display()))?;
-
-        Ok(event)
+        Self::with_exclusive(path, |trace| trace.append(kind, payload))
     }
 
     pub fn read(path: &Path) -> Result<Self> {
+        if !path.exists() {
+            return Self::read_unlocked(path);
+        }
+
+        Self::with_shared(path, || Self::read_unlocked(path))
+    }
+
+    fn with_shared<T>(path: &Path, operation: impl FnOnce() -> Result<T>) -> Result<T> {
+        let lock_file = open_trace_lock(path)?;
+        lock_file
+            .lock_shared()
+            .with_context(|| format!("failed to lock trace {} for reading", path.display()))?;
+
+        let result = operation();
+        drop(lock_file);
+        result
+    }
+
+    fn read_unlocked(path: &Path) -> Result<Self> {
         let content = fs::read_to_string(path)
             .with_context(|| format!("failed to read trace file {}", path.display()))?;
+        Self::parse_jsonl(&content)
+    }
+
+    fn parse_jsonl(content: &str) -> Result<Self> {
         let mut events = Vec::new();
 
         for (line_index, line) in content.lines().enumerate() {
@@ -397,6 +408,68 @@ impl Trace {
     }
 }
 
+impl LockedTrace<'_> {
+    pub fn exists(&self) -> bool {
+        self.path.exists()
+    }
+
+    pub fn init(&self, run_id: &str, force: bool) -> Result<()> {
+        if self.path.exists() && self.path.metadata()?.len() > 0 && !force {
+            bail!("trace already exists: {}", self.path.display());
+        }
+
+        let mut payload = json!({"created_by":"slod","status":"started"});
+        if let Some(host) = crate::host::context() {
+            payload["host"] = host;
+        }
+        let event = Event::new(run_id, EventKind::RunStarted, 0, payload);
+        let encoded = encode_event_line(&event)?;
+        let mut file = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(self.path)
+            .with_context(|| format!("failed to open {}", self.path.display()))?;
+        file.write_all(&encoded)
+            .with_context(|| format!("failed to write {}", self.path.display()))?;
+        Ok(())
+    }
+
+    pub fn append(&self, kind: EventKind, payload: Value) -> Result<Event> {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .append(true)
+            .open(self.path)
+            .with_context(|| format!("failed to open {}", self.path.display()))?;
+        file.rewind()
+            .with_context(|| format!("failed to seek trace file {}", self.path.display()))?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)
+            .with_context(|| format!("failed to read trace file {}", self.path.display()))?;
+        let trace = Trace::parse_jsonl(&content)?;
+
+        if trace.events.is_empty() {
+            bail!("cannot append to empty trace: {}", self.path.display());
+        }
+        if trace
+            .events
+            .last()
+            .is_some_and(|event| event.kind == EventKind::RunFinished)
+        {
+            bail!("cannot append after run.finished");
+        }
+
+        let run_id = trace.events[0].run_id.clone();
+        let seq = trace.events.last().map_or(0, |event| event.seq + 1);
+        let event = Event::new(run_id, kind, seq, payload);
+        let encoded = encode_event_line(&event)?;
+        file.write_all(&encoded)
+            .with_context(|| format!("failed to append {}", self.path.display()))?;
+
+        Ok(event)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TraceSummary {
     pub run_id: String,
@@ -456,6 +529,41 @@ pub fn human_duration(ms: i128) -> String {
 
 fn now_ms() -> i128 {
     OffsetDateTime::now_utc().unix_timestamp_nanos() / 1_000_000
+}
+
+fn create_parent(path: &Path) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create {}", parent.display()))?;
+    }
+    Ok(())
+}
+
+fn trace_lock_path(path: &Path) -> PathBuf {
+    let mut lock_path = path.as_os_str().to_os_string();
+    lock_path.push(".lock");
+    PathBuf::from(lock_path)
+}
+
+fn open_trace_lock(path: &Path) -> Result<File> {
+    create_parent(path)?;
+    let lock_path = trace_lock_path(path);
+    OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(&lock_path)
+        .with_context(|| format!("failed to open trace lock {}", lock_path.display()))
+}
+
+fn encode_event_line(event: &Event) -> Result<Vec<u8>> {
+    let mut encoded = serde_json::to_vec(event)?;
+    encoded.push(b'\n');
+    Ok(encoded)
 }
 
 #[cfg(test)]
